@@ -1,0 +1,284 @@
+{
+  "info": {
+    "name": "ToDoList API Collection",
+    "description": "Test collection for ToDoList API - Bao gồm tất cả các endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "TODO APIs",
+      "item": [
+        {
+          "name": "Get All Todos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/todos",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["todos"]
+            },
+            "description": "Lấy danh sách tất cả todos"
+          }
+        },
+        {
+          "name": "Get Todo By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/todos/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["todos", "1"]
+            },
+            "description": "Lấy chi tiết 1 todo theo ID (thay 1 bằng ID cần lấy)"
+          }
+        },
+        {
+          "name": "Create Todo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Hoàn thành dự án\",\n  \"description\": \"Cần hoàn thành dự án này trước thứ 6\",\n  \"priority_id\": 1,\n  \"deadline\": \"2026-01-10\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/todos",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["todos"]
+            },
+            "description": "Tạo 1 todo mới (category_id bỏ nếu chưa có category trong DB)"
+          }
+        },
+        {
+          "name": "Update Todo",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Hoàn thành dự án - Cập nhật\",\n  \"description\": \"Cần hoàn thành dự án này trước thứ 5\",\n  \"priority_id\": 2,\n  \"deadline\": \"2026-01-09\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/todos/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["todos", "1"]
+            },
+            "description": "Cập nhật thông tin 1 todo (thay 1 bằng ID todo cần update)"
+          }
+        },
+        {
+          "name": "Complete Todo",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/todos/1/complete",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["todos", "1", "complete"]
+            },
+            "description": "Đánh dấu 1 todo đã hoàn thành (thay 1 bằng ID todo)"
+          }
+        },
+        {
+          "name": "Update Todo Priority",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"priority_id\": 3\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/todos/1/priority",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["todos", "1", "priority"]
+            },
+            "description": "Cập nhật mức độ ưu tiên của todo (thay 1 bằng ID todo)"
+          }
+        },
+        {
+          "name": "Delete Todo",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/todos/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["todos", "1"]
+            },
+            "description": "Xóa 1 todo (thay 1 bằng ID todo cần xóa)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "PRIORITY APIs",
+      "item": [
+        {
+          "name": "Get All Priorities",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/priorities",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["priorities"]
+            },
+            "description": "Lấy danh sách tất cả mức độ ưu tiên"
+          }
+        },
+        {
+          "name": "Create Priority",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Cao\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/priorities",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["priorities"]
+            },
+            "description": "Tạo 1 mức độ ưu tiên mới"
+          }
+        },
+        {
+          "name": "Update Priority",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Cao - Cập nhật\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/priorities/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["priorities", "1"]
+            },
+            "description": "Cập nhật mức độ ưu tiên (thay 1 bằng ID priority)"
+          }
+        },
+        {
+          "name": "Delete Priority",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/priorities/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["priorities", "1"]
+            },
+            "description": "Xóa 1 mức độ ưu tiên (thay 1 bằng ID priority)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "LOG APIs",
+      "item": [
+        {
+          "name": "Get All Logs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/logs",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["logs"]
+            },
+            "description": "Lấy danh sách tất cả logs"
+          }
+        },
+        {
+          "name": "Get Logs By Todo ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/logs/todo/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["logs", "todo", "1"]
+            },
+            "description": "Lấy tất cả logs của 1 todo (thay 1 bằng ID todo)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": [""]
+        },
+        "description": "Kiểm tra server có đang chạy không"
+      }
+    }
+  ]
+}

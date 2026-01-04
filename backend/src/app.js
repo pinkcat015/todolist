@@ -21,6 +21,9 @@ app.use("/", logRoutes);
 const priorityRoutes = require("./routes/priority.routes");
 app.use("/priorities", priorityRoutes);
 
+const categoryRoutes = require("./routes/category.routes");
+app.use("/categories", categoryRoutes);
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server đang chạy tại port ${PORT}`);

@@ -8,5 +8,7 @@ router.put("/:id", controller.updateTodo);
 router.delete("/:id", controller.deleteTodo);
 router.get("/:id", controller.getTodoById);
 router.patch("/:id/complete", controller.completeTodo);
+router.patch("/:id/priority", controller.updateTodoPriority);
+router.patch("/:id/category", controller.updateTodoCategory);
 
 module.exports = router;
