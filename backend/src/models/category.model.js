@@ -1,33 +1,58 @@
 const db = require("../config/db");
 
 const Category = {
-  getAll: (callback) => {
-    db.query("SELECT * FROM categories", callback);
+  /**
+   * Lấy categories theo user_id
+   */
+  getByUserId: (userId, callback) => {
+    const sql = `
+      SELECT * FROM categories 
+      WHERE user_id = ? 
+      ORDER BY name ASC
+    `;
+    db.query(sql, [userId], callback);
   },
 
-  getById: (id, callback) => {
-    db.query("SELECT * FROM categories WHERE id = ?", [id], callback);
+  /**
+   * Lấy category theo ID + check user_id (ownership)
+   */
+  getById: (id, userId, callback) => {
+    const sql = `
+      SELECT * FROM categories 
+      WHERE id = ? AND user_id = ?
+    `;
+    db.query(sql, [id, userId], callback);
   },
 
+  /**
+   * Tạo category mới (với user_id)
+   */
   create: (data, callback) => {
     const sql = `
-      INSERT INTO categories (name, user_id)
+      INSERT INTO categories (name, user_id) 
       VALUES (?, ?)
     `;
     db.query(sql, [data.name, data.user_id], callback);
   },
 
+  /**
+   * Cập nhật category
+   */
   update: (id, data, callback) => {
     const sql = `
-      UPDATE categories
-      SET name = ?
+      UPDATE categories 
+      SET name = ? 
       WHERE id = ?
     `;
     db.query(sql, [data.name, id], callback);
   },
 
+  /**
+   * Xóa category
+   */
   delete: (id, callback) => {
-    db.query("DELETE FROM categories WHERE id = ?", [id], callback);
+    const sql = "DELETE FROM categories WHERE id = ?";
+    db.query(sql, [id], callback);
   }
 };
 

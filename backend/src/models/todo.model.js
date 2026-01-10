@@ -2,10 +2,10 @@ const db = require("../config/db");
 
 
 /**
- * GET todo by id
+ * GET todo by id (kiểm tra user_id để security)
  */
-exports.getById = (id, callback) => {
-  db.query("SELECT * FROM todos WHERE id = ?", [id], callback);
+exports.getById = (id, userId, callback) => {
+  db.query("SELECT * FROM todos WHERE id = ? AND user_id = ?", [id, userId], callback);
 };
 
 /**
@@ -66,10 +66,10 @@ exports.getWithPaginationAndFilter = (options, callback) => {
     FROM todos t
     LEFT JOIN priorities p ON t.priority_id = p.id
     LEFT JOIN categories c ON t.category_id = c.id
-    WHERE 1=1
+    WHERE t.user_id = ?
   `;
 
-  const params = [];
+  const params = [options.userId]; // Thêm userId vào đầu params
 
   if (options.q) {
     baseSql += " AND t.title LIKE ?";

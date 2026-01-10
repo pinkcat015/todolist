@@ -1,14 +1,33 @@
 const express = require("express");
 const router = express.Router();
-const controller = require("../controllers/todo.controller");
+const todoController = require("../controllers/todo.controller");
+const authMiddleware = require("../middleware/auth.middleware");
 
-router.get("/", controller.getTodos);
-router.post("/", controller.createTodo);
-router.put("/:id", controller.updateTodo);
-router.delete("/:id", controller.deleteTodo);
-router.get("/:id", controller.getTodoById);
-router.patch("/:id/complete", controller.completeTodo);
-router.patch("/:id/priority", controller.updateTodoPriority);
-router.patch("/:id/category", controller.updateTodoCategory);
+// Tất cả routes cần auth
+router.use(authMiddleware);
+
+// GET /todos - CHỈ lấy todos của user đang login
+router.get("/", todoController.getTodos);
+
+// GET /todos/:id - Kiểm tra ownership
+router.get("/:id", todoController.getTodoById);
+
+// POST /todos - Tự động gán user_id
+router.post("/", todoController.createTodo);
+
+// PUT /todos/:id - Kiểm tra ownership
+router.put("/:id", todoController.updateTodo);
+
+// DELETE /todos/:id - Kiểm tra ownership
+router.delete("/:id", todoController.deleteTodo);
+
+// PATCH /todos/:id/complete - Kiểm tra ownership
+router.patch("/:id/complete", todoController.completeTodo);
+
+// PATCH /todos/:id/priority - Kiểm tra ownership
+router.patch("/:id/priority", todoController.updateTodoPriority);
+
+// PATCH /todos/:id/category - Kiểm tra ownership
+router.patch("/:id/category", todoController.updateTodoCategory);
 
 module.exports = router;

@@ -4,16 +4,20 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-  "dev": "nodemon src/app.js"
-},
+    "dev": "nodemon src/app.js",
+    "seed": "node src/seed.js",
+    "seed:users": "node src/seedUsers.js"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.0",
     "mysql2": "^3.16.0"
   },
   "devDependencies": {

@@ -279,6 +279,80 @@
         },
         "description": "Kiểm tra server có đang chạy không"
       }
+    },
+    {
+      "name": "Authentication APIs",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"user\",\n  \"email\": \"user@example.com\",\n  \"password\": \"123456\",\n  \"confirmPassword\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/auth/register",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["auth", "register"]
+            },
+            "description": "Đăng ký tài khoản mới"
+          }
+        },
+        {
+          "name": "Login User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"user\",\n  \"password\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/auth/login",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["auth", "login"]
+            },
+            "description": "Đăng nhập với tài khoản, nhận lại JWT token"
+          }
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "description": "Thay {{token}} bằng token nhận được từ login"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/auth/me",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["auth", "me"]
+            },
+            "description": "Lấy thông tin người dùng hiện tại (cần JWT token)"
+          }
+        }
+      ]
     }
   ]
 }
