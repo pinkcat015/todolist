@@ -15,3 +15,9 @@ build/
 # Python
 __pycache__/
 venv/
+
+# 1. Bỏ qua tất cả mọi thứ trong thư mục uploads
+backend/uploads/*
+
+# 2. Ngoại trừ file .gitkeep (để giữ lại thư mục rỗng)
+!backend/uploads/.gitkeep

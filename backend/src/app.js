@@ -39,7 +39,7 @@ const categoryRoutes = require("./routes/category.routes");
 app.use("/categories", categoryRoutes);
 
 //Cho phép truy cập thư mục uploads từ bên ngoài
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 const userRoutes = require("./routes/user.routes");
 app.use("/users", userRoutes);

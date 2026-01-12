@@ -1,27 +1,45 @@
 const User = require("../models/user.model");
 const bcrypt = require("bcryptjs");
-
+const db = require("../config/db");
 // Cập nhật thông tin cá nhân
 exports.updateProfile = (req, res) => {
-  const userId = req.userId;
-  console.log('req.body:', req.body);
-  console.log('req.file:', req.file);
-  const { full_name, avatar_url, phone } = req.body;
+  const userId = req.user.id;
+  const { full_name, phone } = req.body;
+  
+  // 1. Lấy thông tin file từ req.file (Log của bạn cho thấy cái này ĐÃ CÓ)
+  const file = req.file; 
 
-  console.log('Update profile request:', { userId, full_name, avatar_url, phone }); // Debug
+  let sql, params;
 
-  const userData = { 
-    full_name: full_name || null, 
-    avatar_url: avatar_url || null, 
-    phone: phone || null 
-  };
+  if (file) {
+    // 2. Nếu có file, tạo đường dẫn URL từ filename
+    // Lưu ý: Phải có dấu / ở đầu: /uploads/...
+    const avatarUrl = `/uploads/${file.filename}`; 
 
-  User.updateProfile(userId, userData, (err, result) => {
+    console.log("Avatar URL sẽ lưu vào DB:", avatarUrl); // Log để kiểm tra
+
+    // Cập nhật CÓ đổi ảnh
+    sql = "UPDATE users SET full_name = ?, phone = ?, avatar_url = ? WHERE id = ?";
+    params = [full_name, phone, avatarUrl, userId];
+  } else {
+    // Cập nhật KHÔNG đổi ảnh (giữ nguyên ảnh cũ)
+    sql = "UPDATE users SET full_name = ?, phone = ? WHERE id = ?";
+    params = [full_name, phone, userId];
+  }
+
+  db.query(sql, params, (err, result) => {
     if (err) {
-      console.error('Update profile error:', err); // Debug
-      return res.status(500).json({ message: "Lỗi server", error: err.message });
+      console.error("Lỗi SQL:", err);
+      return res.status(500).json({ error: err.message });
     }
-    res.json({ message: "Cập nhật hồ sơ thành công" });
+
+    // Trả về avatar mới cho Frontend hiển thị ngay
+    const newAvatar = file ? `/uploads/${file.filename}` : null;
+    
+    res.json({ 
+      message: "Cập nhật hồ sơ thành công",
+      newAvatar: newAvatar
+    });
   });
 };
 
