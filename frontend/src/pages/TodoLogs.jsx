@@ -1,12 +1,26 @@
 import React, { useState, useEffect } from 'react';
+import { 
+  Table, Card, Input, Button, Tag, Typography, 
+  ConfigProvider, message, Space, Empty, Tooltip, Popconfirm 
+} from 'antd';
+import { 
+  SearchOutlined, ReloadOutlined, HistoryOutlined, 
+  ClockCircleOutlined, AppstoreAddOutlined, 
+  DeleteOutlined, EditOutlined, CheckCircleOutlined, 
+  ThunderboltFilled, CloseOutlined 
+} from '@ant-design/icons';
+import dayjs from 'dayjs';
 import todoApi from '../api/todo.api';
-import { FaClock, FaFilter } from 'react-icons/fa';
+
+const { Text } = Typography;
+
+// --- MÀU SẮC CHỦ ĐẠO (Đồng bộ với TaskManager) ---
+const THEME_COLOR = '#722ed1';
 
 const TodoLogs = () => {
-  const [logs, setLogs] = useState([]); // Always initialize as array
+  const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [search, setSearch] = useState('');
-  const [error, setError] = useState('');
+  const [searchText, setSearchText] = useState('');
 
   useEffect(() => {
     fetchLogs();
@@ -14,154 +28,257 @@ const TodoLogs = () => {
 
   const fetchLogs = async () => {
     setLoading(true);
-    setError('');
     try {
       const res = await todoApi.getLogs();
-      // Ensure we always set an array
       setLogs(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
-      console.error('Error fetching logs:', err);
-      
-      // Check if it's auth error
-      if (err.response?.status === 401) {
-        setError('Bạn chưa đăng nhập. Vui lòng đăng nhập lại.');
-      } else {
-        setError('Không thể tải lịch sử. Vui lòng thử lại.');
-      }
-      
-      // Always ensure logs is an array
-      setLogs([]);
+      console.error(err);
+      // Xử lý lỗi nhẹ nhàng
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredLogs = logs.filter(log => {
-    const query = search.toLowerCase();
+  // Hàm xóa 1 log (Giả định bạn đã thêm API này như các bước trước)
+  const handleDeleteSingle = async (id) => {
+    try {
+      await todoApi.deleteLog(id);
+      message.success('Đã xóa dòng nhật ký');
+      setLogs(prev => prev.filter(item => item.id !== id));
+    } catch (error) {
+      message.error('Lỗi khi xóa');
+    }
+  };
+
+  // Hàm xóa toàn bộ
+  const handleClearLogs = async () => {
+    try {
+      await todoApi.clearLogs();
+      message.success('Đã dọn dẹp lịch sử!');
+      fetchLogs();
+    } catch (error) {
+      message.error('Lỗi khi xóa');
+    }
+  };
+
+  // --- HELPER: Cấu hình hiển thị (Màu sắc & Icon) ---
+  const getActionConfig = (action) => {
+    const act = action ? action.toLowerCase() : '';
+    
+    // Style đồng bộ với TaskManager
+    if (act.includes('creat')) return { color: 'blue', icon: <AppstoreAddOutlined />, text: 'Tạo mới', bg: '#e6f7ff' };
+    if (act.includes('delet')) return { color: 'red', icon: <DeleteOutlined />, text: 'Đã xóa', bg: '#fff1f0' };
+    if (act.includes('complet')) return { color: 'green', icon: <CheckCircleOutlined />, text: 'Hoàn thành', bg: '#f6ffed' };
+    if (act.includes('priority')) return { color: 'gold', icon: <ThunderboltFilled />, text: 'Đổi ưu tiên', bg: '#fffbe6' };
+    if (act.includes('updat')) return { color: 'orange', icon: <EditOutlined />, text: 'Cập nhật', bg: '#fff7e6' };
+    
+    return { color: 'default', icon: <HistoryOutlined />, text: 'Hoạt động', bg: '#f5f5f5' };
+  };
+
+  // --- CẤU HÌNH CỘT TABLE ---
+  const columns = [
+    {
+      title: 'Hành động',
+      key: 'action',
+      width: 160,
+      render: (_, record) => {
+        const config = getActionConfig(record.action);
+        return (
+          <Tag 
+            icon={config.icon} 
+            color={config.color} 
+            style={{ 
+              padding: '4px 10px', 
+              borderRadius: 12, // Bo tròn kiểu pill
+              fontSize: 13, 
+              fontWeight: 600,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 5,
+              border: 'none' // Bỏ viền cho mềm mại
+            }}
+          >
+            {config.text}
+          </Tag>
+        );
+      }
+    },
+    {
+      title: 'Chi tiết',
+      dataIndex: 'title',
+      key: 'title',
+      render: (text, record) => (
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <Text strong style={{ color: '#333', fontSize: 14 }}>
+            {text || <span style={{color: '#999', fontStyle: 'italic'}}>Công việc không xác định</span>}
+          </Text>
+          <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>
+             Mã công việc: <span style={{fontFamily: 'monospace'}}>#{record.todo_id}</span>
+          </div>
+        </div>
+      )
+    },
+    {
+      title: 'Thời gian',
+      dataIndex: 'log_time',
+      key: 'log_time',
+      width: 180,
+      render: (date) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#666' }}>
+           <ClockCircleOutlined style={{ color: '#bbb' }} />
+           <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
+             <span style={{ fontWeight: 600, color: '#555' }}>{dayjs(date).format('HH:mm')}</span>
+             <span style={{ fontSize: 12, color: '#999' }}>{dayjs(date).format('DD/MM/YYYY')}</span>
+           </div>
+        </div>
+      )
+    },
+    {
+      title: '',
+      key: 'ops',
+      width: 50,
+      align: 'right',
+      render: (_, record) => (
+        <Popconfirm 
+          title="Xóa dòng này?" 
+          onConfirm={() => handleDeleteSingle(record.id)}
+          okText="Xóa"
+          cancelText="Hủy"
+          placement="left"
+        >
+          <Tooltip title="Xóa bản ghi này">
+            <Button 
+              type="text" 
+              danger 
+              icon={<CloseOutlined />} 
+              size="small" 
+              style={{ opacity: 0.5 }} // Mờ nhẹ để không rối mắt
+            />
+          </Tooltip>
+        </Popconfirm>
+      )
+    }
+  ];
+
+  // Logic lọc dữ liệu client-side
+  const filteredData = logs.filter(item => {
+    const q = searchText.toLowerCase();
     return (
-      (log.title && log.title.toLowerCase().includes(query)) ||
-      (log.action && log.action.toLowerCase().includes(query))
+      (item.title && item.title.toLowerCase().includes(q)) || 
+      (item.action && item.action.toLowerCase().includes(q))
     );
   });
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return '—';
-    const date = new Date(dateStr);
-    return date.toLocaleString('vi-VN');
-  };
-
-  const getActionBadgeColor = (action) => {
-    if (action?.includes('created')) return '#3b82f6';
-    if (action?.includes('delete')) return '#ef4444';
-    if (action?.includes('completed')) return '#22c55e';
-    if (action?.includes('updated')) return '#f59e0b';
-    return '#64748b';
-  };
-
   return (
-    <div>
-      {/* HEADER */}
-      <div className="page-header">
-        <div>
-          <h2 className="page-title">Lịch sử chỉnh sửa 📋</h2>
-          <span className="breadcrumb">Quản lý / Lịch sử hoạt động</span>
-        </div>
-      </div>
-
-      {/* TABLE BOX */}
-      <div className="table-container">
+    <ConfigProvider
+      theme={{
+        token: {
+          colorPrimary: THEME_COLOR,
+          borderRadius: 12, // Đồng bộ bo góc 12px
+          fontFamily: 'Nunito, Quicksand, sans-serif',
+        },
+      }}
+    >
+      <div style={{ padding: '20px 40px', background: '#f5f7fa', minHeight: '100vh' }}>
         
-        {/* TOOLBAR */}
-        <div className="toolbar">
-          <input 
-            style={{ width: '350px' }}
-            placeholder="🔍 Tìm kiếm theo công việc hoặc hành động..." 
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+        {/* HEADER CARD (Gradient Tím - Giống hệt TaskManager) */}
+        <Card variant="borderless" style={{ marginBottom: 20, background: 'linear-gradient(135deg, #722ed1 0%, #a661ff 100%)', color: 'white', boxShadow: '0 8px 20px rgba(114, 46, 209, 0.2)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <h1 style={{ color: 'white', margin: 0, fontSize: 24, display: 'flex', alignItems: 'center', gap: 10 }}>
+                 <HistoryOutlined /> Lịch sử hoạt động
+              </h1>
+              <p style={{ opacity: 0.9, marginTop: 5, fontSize: 15 }}>Theo dõi tất cả thay đổi trong hệ thống của bạn.</p>
+            </div>
+            
+            {/* Thay vì Progress Bar thì dùng bộ đếm số lượng */}
+            <div style={{ textAlign: 'right' }}>
+               <div style={{opacity: 0.9, fontSize: 13, marginBottom: 5}}>Tổng số bản ghi</div>
+               <div style={{ 
+                 background: 'rgba(255,255,255,0.2)', 
+                 padding: '5px 15px', 
+                 borderRadius: 20, 
+                 fontWeight: 'bold', 
+                 fontSize: 20,
+                 backdropFilter: 'blur(5px)',
+                 display: 'inline-block'
+               }}>
+                 {filteredData.length}
+               </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* MAIN CONTENT CARD */}
+        <Card variant="borderless" style={{ borderRadius: 16, boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
+          
+          {/* TOOLBAR */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
+            <Input 
+              prefix={<SearchOutlined style={{color: '#ccc'}} />} 
+              placeholder=" Tìm kiếm lịch sử..." 
+              size="large"
+              style={{ width: 350, borderRadius: 20 }}
+              value={searchText}
+              onChange={e => setSearchText(e.target.value)}
+              allowClear
+            />
+            
+            <Space>
+              <Tooltip title="Tải lại dữ liệu">
+                <Button 
+                  icon={<ReloadOutlined />} 
+                  onClick={fetchLogs} 
+                  size="large" 
+                  shape="circle" // Nút tròn cho đẹp
+                />
+              </Tooltip>
+              
+              {logs.length > 0 && (
+                <Popconfirm 
+                  title="Xóa toàn bộ lịch sử?" 
+                  description="Hành động này không thể hoàn tác!"
+                  onConfirm={handleClearLogs}
+                  okText="Xóa sạch"
+                  cancelText="Hủy"
+                  okButtonProps={{ danger: true }}
+                >
+                  <Button 
+                    danger 
+                    size="large" 
+                    icon={<DeleteOutlined />} 
+                    style={{ borderRadius: 20 }}
+                  >
+                    Xóa tất cả
+                  </Button>
+                </Popconfirm>
+              )}
+            </Space>
+          </div>
+
+          {/* TABLE */}
+          <Table
+            rowKey={(r) => r.id || Math.random()}
+            columns={columns}
+            dataSource={filteredData}
+            loading={loading}
+            pagination={{ 
+              pageSize: 10, 
+              showSizeChanger: false,
+              placement: ['bottomRight'] 
+            }}
+            locale={{ 
+              emptyText: (
+                <Empty 
+                  image={Empty.PRESENTED_IMAGE_SIMPLE} 
+                  description={<span style={{color: '#999'}}>Chưa có hoạt động nào 🍃</span>} 
+                />
+              ) 
+            }}
           />
-          <button className="btn-refresh" onClick={fetchLogs} style={{
-            background: '#f8fafc',
-            border: '1.5px solid #e2e8f0',
-            padding: '10px 16px',
-            borderRadius: '10px',
-            cursor: 'pointer',
-            fontWeight: '600',
-            fontSize: '13px',
-            transition: 'all 0.2s',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}>
-            <FaFilter /> Làm mới
-          </button>
-        </div>
-
-        {/* ERROR MESSAGE */}
-        {error && (
-          <div style={{ 
-            padding: '16px', 
-            background: '#fee2e2', 
-            border: '1px solid #fecaca',
-            borderRadius: '8px',
-            color: '#991b1b',
-            margin: '16px 0'
-          }}>
-            ⚠️ {error}
-          </div>
-        )}
-
-        {/* TABLE */}
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '60px 20px', color: '#94a3b8' }}>
-            ⏳ Đang tải dữ liệu...
-          </div>
-        ) : filteredLogs.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '60px 20px', color: '#94a3b8' }}>
-            {search ? '❌ Không tìm thấy bản ghi nào' : '📭 Chưa có lịch sử chỉnh sửa'}
-          </div>
-        ) : (
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th width="60">#</th>
-                <th>Công việc</th>
-                <th>Hành động</th>
-                <th>Thời gian</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredLogs.map((log, idx) => (
-                <tr key={log.id || idx}>
-                  <td>{log.id}</td>
-                  <td style={{ fontWeight: '600', color: '#334155' }}>
-                    {log.title || `Todo #${log.todo_id}`}
-                  </td>
-                  <td>
-                    <span style={{
-                      background: getActionBadgeColor(log.action),
-                      color: 'white',
-                      padding: '6px 12px',
-                      borderRadius: '20px',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      textTransform: 'capitalize'
-                    }}>
-                      {log.action}
-                    </span>
-                  </td>
-                  <td style={{ fontSize: '13px', color: '#64748b' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <FaClock style={{ fontSize: '12px' }} />
-                      {formatDate(log.log_time)}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+        </Card>
       </div>
-    </div>
+    </ConfigProvider>
   );
 };
 

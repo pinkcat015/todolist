@@ -9,5 +9,6 @@ router.use(authMiddleware);
 // Define actual routes
 router.get("/", logController.getLogsByUser);
 router.get("/todo/:todo_id", logController.getLogsByTodo);
-
+router.delete("/:id", logController.deleteLog);
+router.delete("/", logController.clearLogs);
 module.exports = router;

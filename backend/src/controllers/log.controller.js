@@ -32,4 +32,35 @@ exports.getLogsByTodo = (req, res) => {
   });
 };
 
+exports.clearLogs = (req, res) => {
+  const userId = req.user.id;
+  
+  TodoLog.clearLogsByUser(userId, (err, result) => {
+    if (err) {
+      console.error("Clear logs error:", err);
+      return res.status(500).json({ error: "Lỗi khi xóa lịch sử" });
+    }
+    
+    return res.status(200).json({ 
+      message: "Đã xóa toàn bộ lịch sử thành công",
+      affectedRows: result.affectedRows 
+    });
+  });
+};
 // Remove deprecated getAllLogs if not needed
+exports.deleteLog = (req, res) => {
+  const logId = req.params.id;
+  const userId = req.user.id;
+
+  TodoLog.deleteById(logId, userId, (err, result) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Log không tồn tại hoặc bạn không có quyền xóa." });
+    }
+
+    res.json({ message: "Đã xóa log thành công." });
+  });
+};

@@ -30,10 +30,6 @@ const Sidebar = () => {
         <NavLink to="/logs" className={({ isActive }) => isActive ? "menu-item active" : "menu-item"}>
           <FaClock className="icon" /> Lịch sử chỉnh sửa
         </NavLink>
-
-        <NavLink to="/reports" className={({ isActive }) => isActive ? "menu-item active" : "menu-item"}>
-          <FaStar className="icon" /> Mục tiêu tháng
-        </NavLink>
         
         <NavLink to="/settings" className={({ isActive }) => isActive ? "menu-item active" : "menu-item"}>
           <FaCog className="icon" /> Cài đặt

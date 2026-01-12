@@ -63,14 +63,39 @@ const getUserByEmail = (email, callback) => {
 
 // Find user by id
 const getUserById = (id, callback) => {
-  const sql = "SELECT id, username, email, created_at FROM users WHERE id = ?";
-  
+  const sql = "SELECT id, username, email, full_name, avatar_url, phone, created_at FROM users WHERE id = ?";
   db.query(sql, [id], (err, results) => {
-    if (err) {
-      callback(err, null);
-    } else {
-      callback(null, results[0]);
-    }
+    if (err) callback(err, null);
+    else callback(null, results[0]);
+  });
+};
+
+// Lấy mật khẩu theo ID (Dùng riêng cho chức năng đổi mật khẩu)
+const getUserPasswordById = (id, callback) => {
+  const sql = "SELECT password FROM users WHERE id = ?";
+  db.query(sql, [id], (err, results) => {
+    if (err) callback(err, null);
+    else callback(null, results[0]);
+  });
+};
+
+//Cập nhật thông tin cá nhân
+const updateProfile = (id, userData, callback) => {
+  const { full_name, avatar_url, phone } = userData;
+  // Chỉ update 3 trường này, không đụng đến email/username/password
+  const sql = "UPDATE users SET full_name = ?, avatar_url = ?, phone = ? WHERE id = ?";
+  db.query(sql, [full_name, avatar_url, phone, id], (err, result) => {
+    if (err) callback(err, null);
+    else callback(null, result);
+  });
+};
+
+//  Cập nhật mật khẩu
+const updatePassword = (id, newPassword, callback) => {
+  const sql = "UPDATE users SET password = ? WHERE id = ?";
+  db.query(sql, [newPassword, id], (err, result) => {
+    if (err) callback(err, null);
+    else callback(null, result);
   });
 };
 
@@ -79,5 +104,8 @@ module.exports = {
   createUser,
   getUserByUsername,
   getUserByEmail,
-  getUserById,
+  getUserById, 
+  getUserPasswordById,
+  updateProfile,
+  updatePassword
 };

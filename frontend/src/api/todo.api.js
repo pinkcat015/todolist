@@ -26,6 +26,24 @@ const todoApi = {
         'Authorization': `Bearer ${localStorage.getItem('token')}`
       }
     });
+  }, 
+
+  clearLogs: () => {
+    return axiosClient.delete('/logs', {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+  },
+
+  deleteLog: (id) => {
+    return axiosClient.delete(`/logs/${id}`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
   }
 };
+
+  
 export default todoApi;

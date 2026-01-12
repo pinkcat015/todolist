@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard';
 import TaskManager from './pages/TaskManager';
 import TodoLogs from './pages/TodoLogs';
 import Login from './pages/Login';
+import Settings from './pages/Settings';
 
 // Protected Route Component
 function ProtectedRoute({ children }) {
@@ -37,10 +38,7 @@ function App() {
           <Route index element={<Dashboard />} />
           <Route path="tasks" element={<TaskManager />} />
           <Route path="logs" element={<TodoLogs />} />
-          
-          {/* Các trang chưa làm thì tạm thời redirect về dashboard */}
-          <Route path="reports" element={<Navigate to="/" />} />
-          <Route path="settings" element={<Navigate to="/" />} />
+          <Route path="settings" element={<Settings />} />
         </Route>
 
         {/* Redirect unknown routes to login */}

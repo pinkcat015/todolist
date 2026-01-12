@@ -1,243 +1,259 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Pie } from '@ant-design/plots';
+import { 
+  Card, Row, Col, Avatar, Tag, 
+  Button, ConfigProvider, Empty, Typography, Progress, Table 
+} from 'antd';
+import { 
+  CheckCircleFilled, ClockCircleFilled, SyncOutlined, 
+  DatabaseFilled, CalendarOutlined, StarFilled, RightOutlined, 
+  FireFilled 
+} from '@ant-design/icons';
+import dayjs from 'dayjs';
 import todoApi from '../api/todo.api';
-import { FaCheckCircle, FaClipboardList, FaClock, FaPlus, FaClock as FaClockIcon } from 'react-icons/fa';
+
+const { Text } = Typography;
+const THEME_COLOR = '#722ed1'; 
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState({ total: 0, completed: 0, pending: 0, inProgress: 0 });
   const [recentTasks, setRecentTasks] = useState([]);
   const [nearDeadline, setNearDeadline] = useState([]);
+
   const getGreeting = () => {
-  const hour = new Date().getHours();
-  if (hour >= 5 && hour < 12) return '🌅 Chào buổi sáng';
-  if (hour >= 12 && hour < 13) return '☀️ Chào buổi trưa';
-  if (hour >= 13 && hour < 18) return '🌤️ Chào buổi chiều';
-  return '🌙 Chào buổi tối';
-};
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 11) return 'Chào buổi sáng tốt lành ☀️';
+    if (hour >= 11 && hour < 14) return 'Trưa rồi, nhớ nghỉ ngơi nhé 🍚';
+    if (hour >= 14 && hour < 18) return 'Chiều nay làm việc hiệu quả ⚡';
+    return 'Tối rồi, thư giãn thôi 🌙';
+  };
+
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
-        const res = await todoApi.getTodos({ limit: 100 });
+        const res = await todoApi.getTodos({ limit: 1000 });
         if (res.data?.data) {
           const all = res.data.data;
-          const completed = all.filter(t => t.status === 'completed').length;
-          const pending = all.filter(t => t.status === 'pending').length;
-          const inProgress = all.filter(t => t.status === 'in_progress').length;
-          
           setStats({
             total: res.data.meta?.total || all.length,
-            completed,
-            pending,
-            inProgress
+            completed: all.filter(t => t.status === 'completed').length,
+            pending: all.filter(t => t.status === 'pending').length,
+            inProgress: all.filter(t => t.status === 'in_progress').length
           });
 
-          // Get 10 most recent tasks (ordered by creation)
-          setRecentTasks(all.slice(0, 10));
+          setRecentTasks(all.slice(0, 5));
 
-          // Get tasks with deadline in next 7 days
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          const nextWeek = new Date(today);
-          nextWeek.setDate(nextWeek.getDate() + 7);
-
-          const upcomingDeadlines = all.filter(t => {
+          const today = dayjs().startOf('day');
+          const nextWeek = today.add(7, 'day');
+          setNearDeadline(all.filter(t => {
             if (!t.deadline || t.status === 'completed') return false;
-            const deadline = new Date(t.deadline);
-            deadline.setHours(0, 0, 0, 0);
-            return deadline >= today && deadline <= nextWeek;
-          }).sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
-
-          setNearDeadline(upcomingDeadlines);
+            const d = dayjs(t.deadline);
+            return d.isAfter(today) && d.isBefore(nextWeek);
+          }).sort((a, b) => dayjs(a.deadline).valueOf() - dayjs(b.deadline).valueOf()));
         }
-      } catch (error) { console.error(error); }
+      } catch (error) { console.error(error); } 
+      finally { setLoading(false); }
     };
     fetchData();
   }, []);
 
-  const getCatName = (catId) => {
-    // This will be a simple function for now
-    return catId ? `Category ${catId}` : '—';
+  const completionRate = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
+
+  // --- CẤU HÌNH BIỂU ĐỒ (BẢN MỚI) ---
+  const pieConfig = {
+    data: [
+      { type: 'Chưa làm', value: stats.pending },
+      { type: 'Đang làm', value: stats.inProgress },
+      { type: 'Hoàn thành', value: stats.completed }
+    ].filter(item => item.value > 0),
+    angleField: 'value',
+    colorField: 'type',
+    radius: 1,
+    innerRadius: 0.64,
+    color: ({ type }) => {
+      if(type === 'Chưa làm') return '#ff9c6e';
+      if(type === 'Đang làm') return '#b37feb';
+      if(type === 'Hoàn thành') return '#95de64';
+      return '#ccc';
+    },
+    label: false,
+    legend: { color: { title: false, position: 'bottom', rowPadding: 5 } },
+    annotations: [
+      {
+        type: 'text',
+        style: {
+          text: `${stats.total}`,
+          x: '50%', y: '50%', textAlign: 'center', fontSize: 30, fontWeight: 'bold', fill: THEME_COLOR,
+        },
+      },
+    ],
   };
 
-  const getStatusBadge = (status) => {
-    if (status === 'pending') return '⏳ Chưa bắt đầu';
-    if (status === 'in_progress') return '🔄 Đang làm';
-    return '✅ Đã hoàn thành';
-  };
+  const columns = [
+    { 
+      title: 'Công việc', 
+      dataIndex: 'title',
+      render: (text, record) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <Avatar shape="square" style={{ backgroundColor: record.status === 'completed' ? '#d9d9d9' : '#fde3cf', color: '#f56a00', borderRadius: 8 }}>
+            {text.charAt(0).toUpperCase()}
+          </Avatar>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 14, color: '#333', textDecoration: record.status === 'completed' ? 'line-through' : 'none', opacity: record.status === 'completed' ? 0.6 : 1 }}>
+              {text}
+            </div>
+          </div>
+        </div>
+      )
+    },
+    { 
+      title: 'Danh mục', 
+      dataIndex: 'category_id',
+      width: 120,
+      render: (_, r) => {
+        const name = r.category_name || (r.category_id ? `Mục ${r.category_id}` : 'Chung');
+        const colors = ['cyan', 'blue', 'geekblue', 'purple', 'magenta'];
+        const color = colors[(r.category_id || 0) % colors.length];
+        // SỬA: bordered={false} -> variant="filled"
+        return <Tag color={color} variant="filled" style={{ borderRadius: 6, fontWeight: 600 }}>#{name}</Tag>
+      }
+    },
+    { 
+      title: 'Trạng thái', 
+      dataIndex: 'status',
+      align: 'right',
+      render: (status) => {
+        const config = {
+          pending: { color: 'default', text: 'Chưa làm' },
+          in_progress: { color: 'processing', text: 'Đang làm' },
+          completed: { color: 'success', text: 'Xong' },
+        };
+        const cur = config[status] || config.pending;
+        // SỬA: bordered={false} -> variant="filled"
+        return <Tag color={cur.color} variant="filled" style={{borderRadius: 6}}>{cur.text}</Tag>
+      }
+    }
+  ];
 
   return (
-    <div className="page-container">
-      <div>
-        <h2 className="page-title">{getGreeting()}!</h2>
-        <span className="breadcrumb">Dashboard / Tổng quan công việc</span>
-      </div>
+    <ConfigProvider
+      theme={{
+        token: {
+          colorPrimary: THEME_COLOR,
+          borderRadius: 16,
+          fontFamily: 'Nunito, Quicksand, sans-serif',
+        },
+      }}
+    >
+      <div style={{ padding: '20px 40px', background: '#f5f7fa', minHeight: '100vh' }}>
+        
+        {/* HEADER: SỬA bordered -> variant="borderless" */}
+        <Card variant="borderless" style={{ marginBottom: 24, background: 'linear-gradient(135deg, #722ed1 0%, #a661ff 100%)', color: 'white', boxShadow: '0 8px 20px rgba(114, 46, 209, 0.2)' }}>
+          <Row align="middle" justify="space-between">
+            <Col>
+              <h1 style={{ color: 'white', margin: 0, fontSize: 24, display: 'flex', alignItems: 'center', gap: 10 }}>
+                 <StarFilled style={{color: '#ffe58f'}} /> {getGreeting()}
+              </h1>
+              <p style={{ opacity: 0.9, marginTop: 5, fontSize: 15 }}>Hệ thống quản lý công việc cá nhân của bạn.</p>
+            </Col>
+            <Col xs={24} sm={8} style={{ textAlign: 'right' }}>
+               <div style={{opacity: 0.9, fontSize: 13, marginBottom: 5}}>Tiến độ tổng thể</div>
+               {/* SỬA: trailColor -> railColor */}
+               <Progress percent={completionRate} strokeColor="#b7eb8f" railColor="rgba(255,255,255,0.2)" format={p => <span style={{color:'white', fontWeight: 'bold'}}>{p}%</span>} />
+            </Col>
+          </Row>
+        </Card>
 
-      {/* STATS ROW */}
-      <div className="dashboard-stats" style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(4, 1fr)', 
-        gap: '15px', 
-        marginBottom: '30px' 
-      }}>
-        <div className="stat-card blue">
-          <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#0284c7' }}>{stats.total}</div>
-          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '5px' }}>Total</div>
-        </div>
-        <div className="stat-card yellow">
-          <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#d97706' }}>{stats.pending}</div>
-          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '5px' }}>Pending</div>
-        </div>
-        <div className="stat-card orange">
-          <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#f97316' }}>{stats.inProgress}</div>
-          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '5px' }}>In Progress</div>
-        </div>
-        <div className="stat-card green">
-          <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#16a34a' }}>{stats.completed}</div>
-          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '5px' }}>Completed</div>
-        </div>
-      </div>
+        {/* STATS ROW */}
+        <Row gutter={[20, 20]} style={{ marginBottom: 24 }}>
+          {[
+            { title: 'Tổng số', value: stats.total, color: '#1890ff', icon: <DatabaseFilled />, bg: '#e6f7ff' },
+            { title: 'Chưa làm', value: stats.pending, color: '#fa8c16', icon: <ClockCircleFilled />, bg: '#fff7e6' },
+            { title: 'Đang chạy', value: stats.inProgress, color: '#722ed1', icon: <SyncOutlined spin />, bg: '#f9f0ff' },
+            { title: 'Hoàn thành', value: stats.completed, color: '#52c41a', icon: <CheckCircleFilled />, bg: '#f6ffed' },
+          ].map((item, index) => (
+            <Col xs={12} sm={6} key={index}>
+              {/* SỬA: bodyStyle -> styles={{ body: ... }} */}
+              <Card variant="borderless" hoverable styles={{ body: { padding: 20 } }} style={{ borderRadius: 16, boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
+                 <div style={{ display: 'flex', alignItems: 'center', gap: 15 }}>
+                    <div style={{ width: 48, height: 48, borderRadius: 12, background: item.bg, color: item.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>
+                      {item.icon}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 24, fontWeight: 'bold', color: '#333' }}>{item.value}</div>
+                      <div style={{ color: '#888', fontSize: 13 }}>{item.title}</div>
+                    </div>
+                 </div>
+              </Card>
+            </Col>
+          ))}
+        </Row>
 
-      {/* CHART & NEAR DEADLINE ROW */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '30px' }}>
-        {/* CHART PLACEHOLDER */}
-        <div style={{
-          background: 'white',
-          borderRadius: '12px',
-          padding: '20px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-          border: '1px solid #e2e8f0'
-        }}>
-          <h3 style={{ fontSize: '14px', fontWeight: '600', marginBottom: '15px', color: '#334155' }}>📈 Biểu đồ tiến độ</h3>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: '150px',
-            background: '#f8fafc',
-            borderRadius: '8px',
-            color: '#94a3b8',
-            fontSize: '13px'
-          }}>
-            Biểu đồ tùy chỉnh sẽ hiển thị tại đây
-          </div>
-        </div>
-
-        {/* NEAR DEADLINE */}
-        <div style={{
-          background: 'white',
-          borderRadius: '12px',
-          padding: '20px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-          border: '1px solid #e2e8f0'
-        }}>
-          <h3 style={{ fontSize: '14px', fontWeight: '600', marginBottom: '15px', color: '#334155' }}>⏰ Sắp hết hạn (7 ngày tới)</h3>
-          <div style={{ maxHeight: '150px', overflowY: 'auto' }}>
-            {nearDeadline.length === 0 ? (
-              <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '13px', padding: '20px 0' }}>
-                Không có công việc sắp hết hạn 🎉
-              </div>
-            ) : (
-              nearDeadline.map(task => (
-                <div key={task.id} style={{
-                  padding: '10px',
-                  borderLeft: '3px solid #f97316',
-                  borderRadius: '4px',
-                  background: '#fef3c7',
-                  marginBottom: '8px',
-                  fontSize: '12px'
-                }}>
-                  <div style={{ fontWeight: '600', color: '#334155' }}>{task.title}</div>
-                  <div style={{ color: '#64748b', fontSize: '11px', marginTop: '2px' }}>
-                    {task.deadline ? new Date(task.deadline).toLocaleDateString('vi-VN') : '—'}
-                  </div>
+        {/* MIDDLE SECTION */}
+        <Row gutter={[24, 24]} style={{ marginBottom: 24 }}>
+          <Col xs={24} md={12}>
+            <Card title="📊 Phân bổ trạng thái" variant="borderless" style={{ height: '100%', borderRadius: 16, boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
+              {stats.total > 0 ? (
+                <div style={{ height: 260 }}><Pie {...pieConfig} /></div>
+              ) : (
+                <Empty description="Chưa có dữ liệu" image={Empty.PRESENTED_IMAGE_SIMPLE} style={{ marginTop: 50 }} />
+              )}
+            </Card>
+          </Col>
+          <Col xs={24} md={12}>
+            {/* SỬA: bodyStyle -> styles={{ body: ... }} */}
+            <Card 
+              title={<span style={{color: '#eb2f96'}}>🔥 Sắp hết hạn (7 ngày tới)</span>} 
+              variant="borderless" 
+              style={{ height: '100%', borderRadius: 16, boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}
+              styles={{ body: { padding: '12px 24px', overflowY: 'auto', maxHeight: 330 } }}
+            >
+              {/* SỬA: Thay List bằng div map để tránh warning deprecated */}
+              {nearDeadline.length === 0 ? (
+                 <div style={{textAlign: 'center', color: '#ccc', padding: 40}}>Không có việc gấp 🎉</div> 
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {nearDeadline.map((item) => (
+                    <div key={item.id} style={{ padding: '12px 16px', borderRadius: 12, background: '#fff0f6', border: '1px solid #ffadd2', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div>
+                        <div style={{ fontWeight: 600, color: '#c41d7f' }}>{item.title}</div>
+                        <div style={{ fontSize: 12, color: '#eb2f96', marginTop: 2 }}>
+                          <CalendarOutlined /> {dayjs(item.deadline).format('DD/MM/YYYY HH:mm')}
+                        </div>
+                      </div>
+                      <FireFilled style={{ color: '#ff4d4f', fontSize: 18 }} />
+                    </div>
+                  ))}
                 </div>
-              ))
-            )}
-          </div>
-        </div>
-      </div>
+              )}
+            </Card>
+          </Col>
+        </Row>
 
-      {/* RECENT TASKS */}
-      <div style={{
-        background: 'white',
-        borderRadius: '12px',
-        padding: '20px',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-        border: '1px solid #e2e8f0',
-        marginBottom: '20px'
-      }}>
-        <h3 style={{ fontSize: '14px', fontWeight: '600', marginBottom: '15px', color: '#334155' }}>📝 Công việc gần đây</h3>
-        <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-          {recentTasks.length === 0 ? (
-            <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '13px', padding: '30px 0' }}>
-              Chưa có công việc nào 🍃
-            </div>
-          ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <tbody>
-                {recentTasks.map((task, index) => (
-                  <tr key={task.id} style={{
-                    borderBottom: index < recentTasks.length - 1 ? '1px solid #e2e8f0' : 'none',
-                    padding: '12px 0'
-                  }}>
-                    <td style={{ padding: '12px 0', width: '45%', fontSize: '13px', fontWeight: '500', color: '#334155' }}>
-                      {task.title}
-                    </td>
-                    <td style={{ padding: '12px 0', width: '25%', fontSize: '12px', color: '#64748b' }}>
-                      <span style={{
-                        background: task.status === 'pending' ? '#fce7f3' : task.status === 'in_progress' ? '#fef3c7' : '#dcfce7',
-                        color: task.status === 'pending' ? '#be185d' : task.status === 'in_progress' ? '#b45309' : '#166534',
-                        padding: '3px 8px',
-                        borderRadius: '4px',
-                        fontSize: '11px',
-                        fontWeight: '600'
-                      }}>
-                        {getStatusBadge(task.status)}
-                      </span>
-                    </td>
-                    <td style={{ padding: '12px 0', width: '30%', fontSize: '12px', color: '#64748b', textAlign: 'right' }}>
-                      {task.deadline ? new Date(task.deadline).toLocaleDateString('vi-VN') : '—'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </div>
-
-      {/* ADD TASK BUTTON */}
-      <div style={{ textAlign: 'center' }}>
-        <button 
-          onClick={() => navigate('/tasks')}
-          style={{
-            background: 'linear-gradient(135deg, #a855f7, #ec4899)',
-            color: 'white',
-            border: 'none',
-            padding: '12px 30px',
-            borderRadius: '8px',
-            fontSize: '14px',
-            fontWeight: '600',
-            cursor: 'pointer',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            transition: 'transform 0.2s, box-shadow 0.2s'
-          }}
-          onMouseOver={(e) => {
-            e.target.style.transform = 'translateY(-2px)';
-            e.target.style.boxShadow = '0 4px 12px rgba(168, 85, 247, 0.4)';
-          }}
-          onMouseOut={(e) => {
-            e.target.style.transform = 'translateY(0)';
-            e.target.style.boxShadow = 'none';
-          }}
+        {/* BOTTOM SECTION */}
+        <Card 
+          title="Công việc vừa cập nhật" 
+          variant="borderless" 
+          style={{ borderRadius: 16, boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}
+          extra={<Button type="link" onClick={() => navigate('/tasks')}>Xem tất cả <RightOutlined /></Button>}
+          styles={{ body: { padding: 0 } }}
         >
-          <FaPlus /> Thêm công việc mới
-        </button>
+          <Table
+            rowKey="id"
+            columns={columns}
+            dataSource={recentTasks}
+            pagination={false}
+            size="middle"
+            locale={{ emptyText: <Empty description="Chưa có dữ liệu" image={Empty.PRESENTED_IMAGE_SIMPLE} /> }}
+          />
+        </Card>
+
       </div>
-    </div>
+    </ConfigProvider>
   );
 };
 

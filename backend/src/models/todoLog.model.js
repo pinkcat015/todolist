@@ -57,6 +57,34 @@ const TodoLog = {
     `;
     db.query(sql, [todoId, userId], callback);
   }
+,
+
+
+deleteById: (logId, userId, callback) => {
+    const sql = `
+      DELETE todo_logs 
+      FROM todo_logs 
+      INNER JOIN todos ON todo_logs.todo_id = todos.id 
+      WHERE todo_logs.id = ? AND todos.user_id = ?
+    `;
+    db.query(sql, [logId, userId], callback);
+  },
+
+
+  
+clearLogsByUser: (userId, callback) => {
+    // Logic: Xóa log nào mà todo_id của nó thuộc về user này
+    const sql = `
+      DELETE todo_logs 
+      FROM todo_logs 
+      INNER JOIN todos ON todo_logs.todo_id = todos.id 
+      WHERE todos.user_id = ?
+    `;
+    db.query(sql, [userId], callback);
+  }
 };
 
 module.exports = TodoLog;
+
+
+
