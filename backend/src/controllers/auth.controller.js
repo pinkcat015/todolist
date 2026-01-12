@@ -114,6 +114,11 @@ exports.login = (req, res) => {
         id: user.id,
         username: user.username,
         email: user.email,
+        full_name: user.full_name,
+        phone: user.phone,
+        avatar_url: user.avatar_url,
+        telegram_chat_id: user.telegram_chat_id,         
+        default_remind_minutes: user.default_remind_minutes 
       },
     });
   });

@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { FaHome, FaHeart, FaStar, FaCog, FaSignOutAlt, FaClock } from 'react-icons/fa';
+// Thêm FaHistory vào danh sách import
+import { FaHome, FaHeart, FaCog, FaSignOutAlt, FaClock, FaHistory } from 'react-icons/fa';
 
 const Sidebar = () => {
   const navigate = useNavigate();
@@ -26,9 +27,15 @@ const Sidebar = () => {
         <NavLink to="/tasks" className={({ isActive }) => isActive ? "menu-item active" : "menu-item"}>
           <FaHeart className="icon" /> Công việc của tôi
         </NavLink>
+        
+        {/* --- MỤC MỚI THÊM VÀO --- */}
+        <NavLink to="/history" className={({ isActive }) => isActive ? "menu-item active" : "menu-item"}>
+          <FaHistory className="icon" /> Lưu trữ & Đã xong
+        </NavLink>
+        {/* ------------------------- */}
 
         <NavLink to="/logs" className={({ isActive }) => isActive ? "menu-item active" : "menu-item"}>
-          <FaClock className="icon" /> Lịch sử chỉnh sửa
+          <FaClock className="icon" /> Lịch sử hoạt động
         </NavLink>
         
         <NavLink to="/settings" className={({ isActive }) => isActive ? "menu-item active" : "menu-item"}>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Card, Form, Input, Button, Tabs, Upload, message, 
-  Avatar, Row, Col, Typography, Switch, Divider, Spin, theme 
+  Avatar, Row, Col, Typography, Switch, Divider, Spin, theme, Select 
 } from 'antd';
 import { 
   UserOutlined, LockOutlined, MailOutlined, 
@@ -25,7 +25,7 @@ const Settings = () => {
   const [dataLoading, setDataLoading] = useState(false);
   
   const [user, setUser] = useState({ 
-    full_name: '', email: '', avatar_url: '', phone: '' 
+    full_name: '', email: '', avatar_url: '', phone: '', telegram_chat_id: '', default_remind_minutes: 30
   });
   
   const [fileList, setFileList] = useState([]); 
@@ -80,6 +80,8 @@ const Settings = () => {
       const formData = new FormData();
       formData.append('full_name', values.full_name || '');
       formData.append('phone', values.phone || '');
+      formData.append('telegram_chat_id', values.telegram_chat_id || '');
+      formData.append('default_remind_minutes', values.default_remind_minutes || 30);
       if (fileList.length > 0) {
         formData.append('avatar', fileList[0].originFileObj);
       }
@@ -112,6 +114,27 @@ const Settings = () => {
     }
   };
 
+
+  const handleUpdateRemindTime = async (minutes) => {
+    try {
+      // 1. Cập nhật giao diện ngay lập tức cho mượt
+      setUser(prev => ({ ...prev, default_remind_minutes: minutes }));
+
+      // 2. Gọi API lưu xuống Database
+      // Lưu ý: Phải gửi kèm cả tên và sđt cũ để không bị mất dữ liệu
+      const formData = new FormData();
+      formData.append('full_name', user.full_name || '');
+      formData.append('phone', user.phone || '');
+      formData.append('telegram_chat_id', user.telegram_chat_id || '');
+      formData.append('default_remind_minutes', minutes); // Giá trị mới
+
+      await userApi.updateProfile(formData);
+      message.success('Đã lưu thời gian nhắc!');
+    } catch (error) {
+      console.error(error);
+      message.error('Lỗi khi lưu cài đặt');
+    }
+  };
   // --- UI COMPONENTS (Đã chỉnh màu) ---
 
   const GeneralSettings = () => (
@@ -175,11 +198,44 @@ const Settings = () => {
                 />
               </Form.Item>
             </Col>
+
             <Col xs={24} sm={12}>
               <Form.Item label="Số điện thoại" name="phone">
                 <Input size="large" prefix={<PhoneOutlined />} placeholder="09xxxx..." style={{ borderRadius: 10 }} />
               </Form.Item>
             </Col>
+
+            <Col span={24}>
+              <Divider orientation="left" style={{ borderColor: '#d9d9d9', color: '#888', fontSize: 13 }}>
+                 Thông báo & Nhắc nhở
+              </Divider>
+              
+              <Form.Item 
+                label={
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    Telegram Chat ID 
+                    <a 
+                      href="https://t.me/pinkcat015_bot" // Thay link bot của bạn vào đây
+                      target="_blank" 
+                      rel="noreferrer" 
+                      style={{ fontSize: 12, fontWeight: 400, color: THEME_COLOR }}
+                    >
+                      (Lấy ID thế nào?)
+                    </a>
+                  </span>
+                } 
+                name="telegram_chat_id"
+                help="Chat '/start' với bot trên Telegram để lấy ID và dán vào đây."
+              >
+                <Input 
+                  size="large" 
+                  prefix={<span style={{fontSize: 18}}>✈️</span>} 
+                  placeholder="Ví dụ: 123456789" 
+                  style={{ borderRadius: 10 }} 
+                />
+              </Form.Item>
+            </Col>
+
           </Row>
           
           <Divider style={{ margin: '15px 0' }} />
@@ -216,6 +272,8 @@ const Settings = () => {
 
   const PreferenceSettings = () => (
     <div style={{ padding: '10px 20px' }}>
+      
+      {/* 1. Cài đặt Email */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 25 }}>
         <div>
           <Text strong style={{ fontSize: 16, color: token.colorText }}>Thông báo Email</Text>
@@ -223,6 +281,8 @@ const Settings = () => {
         </div>
         <Switch defaultChecked style={{ background: THEME_COLOR }} />
       </div>
+
+      {/* 2. Cài đặt Âm thanh */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 25 }}>
         <div>
            <Text strong style={{ fontSize: 16, color: token.colorText }}>Âm thanh hoàn thành</Text>
@@ -230,6 +290,8 @@ const Settings = () => {
         </div>
         <Switch defaultChecked style={{ background: '#52c41a' }} />
       </div>
+
+      {/* 3. Cài đặt Dark Mode */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
            <Text strong style={{ fontSize: 16, color: token.colorText }}>Chế độ tối (Dark Mode)</Text>
@@ -240,6 +302,33 @@ const Settings = () => {
           onChange={toggleTheme} 
           checkedChildren="Bật" 
           unCheckedChildren="Tắt" 
+        />
+      </div>
+
+      {/* --- PHẦN MỚI THÊM: Dòng kẻ ngăn cách --- */}
+      <Divider style={{ margin: '25px 0' }} />
+
+      {/* 4. Cài đặt Thời gian nhắc Telegram */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+           <Text strong style={{ fontSize: 16, color: token.colorText }}>Thời gian nhắc hẹn (Telegram)</Text>
+           <div style={{ color: token.colorTextSecondary, marginTop: 4 }}>
+             Bot sẽ nhắn tin nhắc bạn trước Deadline bao lâu?
+           </div>
+        </div>
+        
+        {/* Ô chọn Select */}
+        <Select 
+          value={user.default_remind_minutes || 30} // Lấy giá trị từ User
+          onChange={handleUpdateRemindTime}          // Gọi hàm lưu khi thay đổi
+          style={{ width: 140 }}
+          options={[
+            { value: 10, label: 'Trước 10 phút' },
+            { value: 30, label: 'Trước 30 phút' },
+            { value: 60, label: 'Trước 1 tiếng' },
+            { value: 180, label: 'Trước 3 tiếng' },
+            { value: 1440, label: 'Trước 1 ngày' },
+          ]}
         />
       </div>
     </div>

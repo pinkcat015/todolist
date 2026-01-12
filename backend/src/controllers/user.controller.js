@@ -4,7 +4,7 @@ const db = require("../config/db");
 // Cập nhật thông tin cá nhân
 exports.updateProfile = (req, res) => {
   const userId = req.user.id;
-  const { full_name, phone } = req.body;
+  const { full_name, phone, telegram_chat_id, default_remind_minutes } = req.body;
   
   // 1. Lấy thông tin file từ req.file (Log của bạn cho thấy cái này ĐÃ CÓ)
   const file = req.file; 
@@ -16,15 +16,15 @@ exports.updateProfile = (req, res) => {
     // Lưu ý: Phải có dấu / ở đầu: /uploads/...
     const avatarUrl = `/uploads/${file.filename}`; 
 
-    console.log("Avatar URL sẽ lưu vào DB:", avatarUrl); // Log để kiểm tra
+    
 
     // Cập nhật CÓ đổi ảnh
-    sql = "UPDATE users SET full_name = ?, phone = ?, avatar_url = ? WHERE id = ?";
-    params = [full_name, phone, avatarUrl, userId];
+    sql = "UPDATE users SET full_name = ?, phone = ?, avatar_url = ?, telegram_chat_id = ?, default_remind_minutes = ? WHERE id = ?";
+    params = [full_name, phone, avatarUrl, telegram_chat_id, default_remind_minutes, userId];
   } else {
     // Cập nhật KHÔNG đổi ảnh (giữ nguyên ảnh cũ)
-    sql = "UPDATE users SET full_name = ?, phone = ? WHERE id = ?";
-    params = [full_name, phone, userId];
+    sql = "UPDATE users SET full_name = ?, phone = ?, telegram_chat_id = ?, default_remind_minutes = ? WHERE id = ?";
+    params = [full_name, phone, telegram_chat_id, default_remind_minutes, userId];
   }
 
   db.query(sql, params, (err, result) => {

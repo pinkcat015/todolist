@@ -63,7 +63,7 @@ const getUserByEmail = (email, callback) => {
 
 // Find user by id
 const getUserById = (id, callback) => {
-  const sql = "SELECT id, username, email, full_name, avatar_url, phone, created_at FROM users WHERE id = ?";
+  const sql = "SELECT id, username, email, full_name, avatar_url, phone, created_at, telegram_chat_id, default_remind_minutes FROM users WHERE id = ?";
   db.query(sql, [id], (err, results) => {
     if (err) callback(err, null);
     else callback(null, results[0]);

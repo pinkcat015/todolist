@@ -12,7 +12,7 @@ import TaskManager from './pages/TaskManager';
 import TodoLogs from './pages/TodoLogs';
 import Login from './pages/Login';
 import Settings from './pages/Settings';
-
+import HistoryLogs from './pages/HistoryLogs';
 // Protected Route Component (Giữ nguyên)
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem('token');
@@ -63,6 +63,7 @@ const AppContent = () => {
             <Route path="tasks" element={<TaskManager />} />
             <Route path="logs" element={<TodoLogs />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="history" element={<HistoryLogs />} />
           </Route>
   
           {/* Redirect unknown routes to login */}

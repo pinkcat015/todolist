@@ -44,6 +44,13 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 const userRoutes = require("./routes/user.routes");
 app.use("/users", userRoutes);
 
+
+const initNotificationService = require('./services/notification.service');
+app.listen(3000, () => {
+    console.log("Server running...");
+    initNotificationService(); // <--- Kích hoạt Cron Job
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server đang chạy tại port ${PORT}`);
