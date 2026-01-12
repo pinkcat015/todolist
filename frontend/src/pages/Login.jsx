@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom'; // Đã thêm Link
 import authApi from '../api/auth.api';
 
 const styles = {
@@ -288,6 +288,26 @@ function Login() {
               </button>
             </div>
           </div>
+
+          {/* 👇 PHẦN QUÊN MẬT KHẨU (Chỉ hiện khi Đăng nhập) 👇 */}
+          {isLogin && (
+            <div style={{ textAlign: 'right', marginBottom: '20px', marginTop: '-10px' }}>
+              <Link 
+                to="/forgot-password" 
+                style={{ 
+                  color: '#ec4899', 
+                  textDecoration: 'none', 
+                  fontWeight: '600', 
+                  fontSize: '0.9rem' 
+                }}
+                onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+                onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+              >
+                Quên mật khẩu?
+              </Link>
+            </div>
+          )}
+          {/* 👆 KẾT THÚC PHẦN MỚI 👆 */}
 
           {!isLogin && (
             <div style={styles.formGroup}>

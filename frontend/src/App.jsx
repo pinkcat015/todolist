@@ -13,6 +13,8 @@ import TodoLogs from './pages/TodoLogs';
 import Login from './pages/Login';
 import Settings from './pages/Settings';
 import HistoryLogs from './pages/HistoryLogs';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 // Protected Route Component (Giữ nguyên)
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem('token');
@@ -49,7 +51,8 @@ const AppContent = () => {
         <Routes>
           {/* Login Route */}
           <Route path="/login" element={<Login />} />
-          
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
           {/* Protected Routes with Layout */}
           <Route 
             path="/" 
@@ -64,6 +67,7 @@ const AppContent = () => {
             <Route path="logs" element={<TodoLogs />} />
             <Route path="settings" element={<Settings />} />
             <Route path="history" element={<HistoryLogs />} />
+            
           </Route>
   
           {/* Redirect unknown routes to login */}

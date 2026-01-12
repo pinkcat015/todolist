@@ -105,7 +105,7 @@ const Settings = () => {
     setLoading(true);
     try {
       await userApi.changePassword(values);
-      message.success('Đổi mật khẩu thành công! 🔐');
+      message.success('Đổi mật khẩu thành công!');
       formPassword.resetFields();
     } catch (error) {
       message.error(error.response?.data?.message || 'Mật khẩu cũ không đúng');
