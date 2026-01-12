@@ -1,37 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { message } from 'antd'; // Dùng message của Antd cho đẹp
+import { message } from 'antd';
 
-// --- Copy nguyên bộ Style từ Login sang ---
 const styles = {
-  container: {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    minHeight: '100vh',
-    fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  videoBackground: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover',
-    zIndex: 1,
-  },
-  overlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '100%',
-    height: '100%',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    zIndex: 2,
-  },
+  // ✂️ ĐÃ XÓA: container, videoBackground, overlay (Layout chung đã xử lý)
+
   card: {
     background: 'rgba(255, 255, 255, 0.85)',
     padding: '40px',
@@ -39,7 +13,7 @@ const styles = {
     boxShadow: '0 15px 50px rgba(0, 0, 0, 0.4)',
     width: '100%',
     maxWidth: '400px',
-    zIndex: 3,
+    // zIndex và position giữ lại để đảm bảo nổi bật trên nền
     position: 'relative',
     backdropFilter: 'blur(15px)',
   },
@@ -83,7 +57,10 @@ const ForgotPassword = () => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [hovered, setHovered] = useState(false);
-  const [status, setStatus] = useState({ type: '', msg: '' }); // type: 'error' | 'success'
+  const [status, setStatus] = useState({ type: '', msg: '' });
+  
+  // ✅ Sửa lỗi Warning message của Antd
+  const [messageApi, contextHolder] = message.useMessage();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -91,24 +68,28 @@ const ForgotPassword = () => {
     setStatus({ type: '', msg: '' });
 
     try {
+      // Gọi API (Đã bỏ /api thừa nếu cần thiết)
       await axios.post('http://localhost:3000/auth/forgot-password', { email });
+      
       setStatus({ type: 'success', msg: 'Đã gửi email! Hãy kiểm tra hộp thư (cả mục Spam).' });
-      message.success('Đã gửi yêu cầu!');
+      messageApi.success('Đã gửi yêu cầu!'); // Dùng messageApi thay cho message thường
     } catch (error) {
       setStatus({ type: 'error', msg: error.response?.data?.message || 'Không thể gửi yêu cầu.' });
+      messageApi.error('Gửi thất bại!');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={styles.container}>
-      <video style={styles.videoBackground} autoPlay muted loop src="https://www.pexels.com/download/video/9034457/" />
-      <div style={styles.overlay} />
-      
+    <>
+      {/* Nơi hiển thị thông báo popup */}
+      {contextHolder}
+
+      {/* 👇 CHỈ CÒN CÁI CARD, KHÔNG CÒN VIDEO/OVERLAY NỮA */}
       <div style={styles.card}>
         <div style={styles.header}>
-          <h1 style={styles.h1}>QUÊN MẬT KHẨU? </h1>
+          <h1 style={styles.h1}>QUÊN MẬT KHẨU?</h1>
           <p style={styles.p}>Nhập email để lấy lại quyền truy cập</p>
         </div>
 
@@ -155,7 +136,7 @@ const ForgotPassword = () => {
           ← Quay lại Đăng nhập
         </Link>
       </div>
-    </div>
+    </>
   );
 };
 

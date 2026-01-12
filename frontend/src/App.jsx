@@ -5,7 +5,7 @@ import { ConfigProvider, theme } from 'antd'; // Import theme của Antd
 
 // Import Context vừa tạo
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
-
+import AuthLayout from './layouts/AuthLayout';
 import MainLayout from './layouts/MainLayout';
 import Dashboard from './pages/Dashboard';
 import TaskManager from './pages/TaskManager';
@@ -49,10 +49,11 @@ const AppContent = () => {
     >
       <BrowserRouter>
         <Routes>
-          {/* Login Route */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password/:token" element={<ResetPassword />} />
+          <Route element={<AuthLayout />}>
+        <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
+    </Route>
           {/* Protected Routes with Layout */}
           <Route 
             path="/" 

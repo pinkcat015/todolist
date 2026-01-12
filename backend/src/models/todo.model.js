@@ -18,8 +18,50 @@ exports.create = (todo, callback) => {
 /**
  * UPDATE todo
  */
-exports.update = (id, data, callback) => {
-  db.query("UPDATE todos SET ? WHERE id = ?", [data, id], callback);
+/**
+ * UPDATE todo
+ * Đã sửa: Xử lý dữ liệu đầu vào & Check quyền sở hữu (userId)
+ */
+exports.update = (id, userId, data, callback) => {
+  // 1. Xử lý dữ liệu sạch (Sanitize)
+  // Nếu không có giá trị (undefined/empty) thì chuyển về null để lưu vào DB
+  const priority_id = data.priority_id || null;
+  const category_id = data.category_id || null;
+  
+  // Xử lý ngày tháng: Nếu có chuỗi thì convert sang Date, không thì null
+  const deadline = data.deadline ? new Date(data.deadline) : null;
+  
+  // Xử lý completed: convert true/false sang 1/0
+  const completed = data.completed ? 1 : 0;
+
+  // 2. Viết câu SQL tường minh
+  const sql = `
+    UPDATE todos 
+    SET 
+      title = ?, 
+      description = ?, 
+      priority_id = ?, 
+      category_id = ?, 
+      deadline = ?, 
+      status = ?, 
+      completed = ?
+    WHERE id = ? AND user_id = ?
+  `;
+
+  // 3. Tạo mảng tham số
+  const values = [
+    data.title, 
+    data.description, 
+    priority_id, 
+    category_id, 
+    deadline, 
+    data.status, 
+    completed,
+    id,     // WHERE id
+    userId  // AND user_id (Bảo mật)
+  ];
+
+  db.query(sql, values, callback);
 };
 
 /**

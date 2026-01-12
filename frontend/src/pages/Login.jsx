@@ -1,35 +1,10 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom'; // Đã thêm Link
+import { useNavigate, Link } from 'react-router-dom';
 import authApi from '../api/auth.api';
 
 const styles = {
-  loginContainer: {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    minHeight: '100vh',
-    fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  videoBackground: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover',
-    zIndex: 1,
-  },
-  overlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '100%',
-    height: '100%',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    zIndex: 2,
-  },
+  // ✂️ ĐÃ XÓA: loginContainer, videoBackground, overlay (Vì Layout đã lo rồi)
+
   loginCard: {
     background: 'rgba(255, 255, 255, 0.85)',
     padding: '40px',
@@ -37,8 +12,8 @@ const styles = {
     boxShadow: '0 15px 50px rgba(0, 0, 0, 0.4)',
     width: '100%',
     maxWidth: '400px',
-    zIndex: 3,
-    position: 'relative',
+    // zIndex và position không cần thiết lắm khi nằm trong layout flex, nhưng giữ lại cũng ko sao
+    position: 'relative', 
     backdropFilter: 'blur(15px)',
   },
   loginHeader: {
@@ -81,11 +56,6 @@ const styles = {
     fontSize: '1rem',
     transition: 'border-color 0.3s',
     boxSizing: 'border-box',
-  },
-  inputFocus: {
-    outline: 'none',
-    borderColor: '#667eea',
-    boxShadow: '0 0 5px rgba(102, 126, 234, 0.2)',
   },
   submitBtn: {
     width: '100%',
@@ -217,156 +187,146 @@ function Login() {
   };
 
   return (
-    <div style={styles.loginContainer}>
-      <video
-        style={styles.videoBackground}
-        autoPlay
-        muted
-        loop
-        src="https://www.pexels.com/download/video/9034457/"
-      />
-      <div style={styles.overlay} />
-      <div style={styles.loginCard}>
-        <div style={styles.loginHeader}>
-          <h1 style={styles.h1}>TODOLIST</h1>
-          <h2 style={styles.h2}>{isLogin ? 'ĐĂNG NHẬP' : 'ĐĂNG KÝ'}</h2>
+    // 👇 CHỈ CÒN LẠI CÁI CARD, KHÔNG CÒN VIDEO/OVERLAY
+    <div style={styles.loginCard}>
+      <div style={styles.loginHeader}>
+        <h1 style={styles.h1}>TODOLIST</h1>
+        <h2 style={styles.h2}>{isLogin ? 'ĐĂNG NHẬP' : 'ĐĂNG KÝ'}</h2>
+      </div>
+
+      {error && <div style={styles.errorMessage}>{error}</div>}
+
+      <form onSubmit={handleSubmit}>
+        <div style={styles.formGroup}>
+          <label htmlFor="username" style={styles.label}>Tên người dùng</label>
+          <input
+            type="text"
+            id="username"
+            name="username"
+            value={formData.username}
+            onChange={handleChange}
+            placeholder="Nhập tên người dùng"
+            required
+            style={styles.input}
+          />
         </div>
 
-        {error && <div style={styles.errorMessage}>{error}</div>}
-
-        <form onSubmit={handleSubmit}>
+        {!isLogin && (
           <div style={styles.formGroup}>
-            <label htmlFor="username" style={styles.label}>Tên người dùng</label>
+            <label htmlFor="email" style={styles.label}>Email</label>
             <input
-              type="text"
-              id="username"
-              name="username"
-              value={formData.username}
+              type="email"
+              id="email"
+              name="email"
+              value={formData.email}
               onChange={handleChange}
-              placeholder="Nhập tên người dùng"
+              placeholder="Nhập email"
               required
               style={styles.input}
             />
           </div>
+        )}
 
-          {!isLogin && (
-            <div style={styles.formGroup}>
-              <label htmlFor="email" style={styles.label}>Email</label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="Nhập email"
-                required
-                style={styles.input}
-              />
-            </div>
-          )}
+        <div style={styles.formGroup}>
+          <label htmlFor="password" style={styles.label}>Mật khẩu</label>
+          <div style={styles.passwordContainer}>
+            <input
+              type={showPassword ? 'text' : 'password'}
+              id="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="Nhập mật khẩu"
+              required
+              style={{...styles.input, paddingRight: '40px'}}
+            />
+            <button
+              type="button"
+              style={styles.togglePasswordBtn}
+              onClick={() => setShowPassword(!showPassword)}
+              title={showPassword ? 'Ẩn mật khẩu' : 'Hiển thị mật khẩu'}
+            >
+              {showPassword ? '👁️' : '👁️‍🗨️'}
+            </button>
+          </div>
+        </div>
 
+        {/* Link Quên mật khẩu */}
+        {isLogin && (
+          <div style={{ textAlign: 'right', marginBottom: '20px', marginTop: '-10px' }}>
+            <Link 
+              to="/forgot-password" 
+              style={{ 
+                color: '#ec4899', 
+                textDecoration: 'none', 
+                fontWeight: '600', 
+                fontSize: '0.9rem' 
+              }}
+              onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+              onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+            >
+              Quên mật khẩu?
+            </Link>
+          </div>
+        )}
+
+        {!isLogin && (
           <div style={styles.formGroup}>
-            <label htmlFor="password" style={styles.label}>Mật khẩu</label>
+            <label htmlFor="confirmPassword" style={styles.label}>Xác nhận mật khẩu</label>
             <div style={styles.passwordContainer}>
               <input
-                type={showPassword ? 'text' : 'password'}
-                id="password"
-                name="password"
-                value={formData.password}
+                type={showConfirmPassword ? 'text' : 'password'}
+                id="confirmPassword"
+                name="confirmPassword"
+                value={formData.confirmPassword}
                 onChange={handleChange}
-                placeholder="Nhập mật khẩu"
+                placeholder="Xác nhận mật khẩu"
                 required
                 style={{...styles.input, paddingRight: '40px'}}
               />
               <button
                 type="button"
                 style={styles.togglePasswordBtn}
-                onClick={() => setShowPassword(!showPassword)}
-                title={showPassword ? 'Ẩn mật khẩu' : 'Hiển thị mật khẩu'}
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                title={showConfirmPassword ? 'Ẩn mật khẩu' : 'Hiển thị mật khẩu'}
               >
-                {showPassword ? '👁️' : '👁️‍🗨️'}
+                {showConfirmPassword ? '👁️' : '👁️‍🗨️'}
               </button>
             </div>
           </div>
+        )}
 
-          {/* 👇 PHẦN QUÊN MẬT KHẨU (Chỉ hiện khi Đăng nhập) 👇 */}
-          {isLogin && (
-            <div style={{ textAlign: 'right', marginBottom: '20px', marginTop: '-10px' }}>
-              <Link 
-                to="/forgot-password" 
-                style={{ 
-                  color: '#ec4899', 
-                  textDecoration: 'none', 
-                  fontWeight: '600', 
-                  fontSize: '0.9rem' 
-                }}
-                onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
-                onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
-              >
-                Quên mật khẩu?
-              </Link>
-            </div>
-          )}
-          {/* 👆 KẾT THÚC PHẦN MỚI 👆 */}
+        <button 
+          type="submit"
+          disabled={loading}
+          style={{
+            ...styles.submitBtn,
+            ...(hoveredSubmit && !loading ? styles.submitBtnHover : {}),
+            ...(loading ? styles.submitBtnDisabled : {}),
+          }}
+          onMouseEnter={() => !loading && setHoveredSubmit(true)}
+          onMouseLeave={() => setHoveredSubmit(false)}
+        >
+          {loading ? 'Đang xử lý...' : (isLogin ? 'Đăng Nhập' : 'Đăng Ký')}
+        </button>
+      </form>
 
-          {!isLogin && (
-            <div style={styles.formGroup}>
-              <label htmlFor="confirmPassword" style={styles.label}>Xác nhận mật khẩu</label>
-              <div style={styles.passwordContainer}>
-                <input
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  placeholder="Xác nhận mật khẩu"
-                  required
-                  style={{...styles.input, paddingRight: '40px'}}
-                />
-                <button
-                  type="button"
-                  style={styles.togglePasswordBtn}
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  title={showConfirmPassword ? 'Ẩn mật khẩu' : 'Hiển thị mật khẩu'}
-                >
-                  {showConfirmPassword ? '👁️' : '👁️‍🗨️'}
-                </button>
-              </div>
-            </div>
-          )}
-
+      <div style={styles.toggleMode}>
+        <p style={styles.toggleP}>
+          {isLogin ? 'Chưa có tài khoản?' : 'Đã có tài khoản?'}
           <button 
-            type="submit"
-            disabled={loading}
+            type="button" 
+            onClick={toggleMode}
             style={{
-              ...styles.submitBtn,
-              ...(hoveredSubmit && !loading ? styles.submitBtnHover : {}),
-              ...(loading ? styles.submitBtnDisabled : {}),
+              ...styles.toggleBtn,
+              ...(hoveredToggle ? styles.toggleBtnHover : {}),
             }}
-            onMouseEnter={() => !loading && setHoveredSubmit(true)}
-            onMouseLeave={() => setHoveredSubmit(false)}
+            onMouseEnter={() => setHoveredToggle(true)}
+            onMouseLeave={() => setHoveredToggle(false)}
           >
-            {loading ? 'Đang xử lý...' : (isLogin ? 'Đăng Nhập' : 'Đăng Ký')}
+            {isLogin ? 'Đăng Ký' : 'Đăng Nhập'}
           </button>
-        </form>
-
-        <div style={styles.toggleMode}>
-          <p style={styles.toggleP}>
-            {isLogin ? 'Chưa có tài khoản?' : 'Đã có tài khoản?'}
-            <button 
-              type="button" 
-              onClick={toggleMode}
-              style={{
-                ...styles.toggleBtn,
-                ...(hoveredToggle ? styles.toggleBtnHover : {}),
-              }}
-              onMouseEnter={() => setHoveredToggle(true)}
-              onMouseLeave={() => setHoveredToggle(false)}
-            >
-              {isLogin ? 'Đăng Ký' : 'Đăng Nhập'}
-            </button>
-          </p>
-        </div>
+        </p>
       </div>
     </div>
   );

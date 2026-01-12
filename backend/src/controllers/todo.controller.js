@@ -102,27 +102,25 @@ exports.createTodo = (req, res) => {
  * PUT /todos/:id
  */
 exports.updateTodo = (req, res) => {
-  const userId = req.userId;
+  const userId = req.userId; // Lấy từ token
   const id = req.params.id;
 
-  Todo.getById(id, userId, (err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
-    if (rows.length === 0)
-      return res.status(404).json({ message: "Todo not found" });
+  // Gọi Model (truyền thêm userId vào tham số thứ 2)
+  Todo.update(id, userId, req.body, (err, result) => {
+    if (err) {
+      console.error("Lỗi Update:", err);
+      return res.status(500).json({ error: err.message });
+    }
 
-    Todo.update(id, req.body, (err) => {
-      if (err) return res.status(500).json({ error: err.message });
+    // result của câu lệnh UPDATE chứa thông tin affectedRows
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Không tìm thấy công việc hoặc bạn không có quyền sửa." });
+    }
 
-      TodoLog.create(
-        {
-          todo_id: id,
-          action: "update"
-        },
-        () => {}
-      );
+    // Ghi Log
+    TodoLog.create({ todo_id: id, action: "update" }, () => {});
 
-      res.json({ message: "Todo updated" });
-    });
+    res.json({ message: "Todo updated successfully" });
   });
 };
 

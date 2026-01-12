@@ -3,25 +3,17 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { message } from 'antd';
 
-// --- Styles Reuse (Có thêm phần passwordContainer) ---
+// --- Styles Reuse (Đã xóa phần container, video, overlay) ---
 const styles = {
-  container: {
-    display: 'flex', justifyContent: 'center', alignItems: 'center',
-    minHeight: '100vh', fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-    position: 'relative', overflow: 'hidden',
-  },
-  videoBackground: {
-    position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-    objectFit: 'cover', zIndex: 1,
-  },
-  overlay: {
-    position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', zIndex: 2,
-  },
   card: {
-    background: 'rgba(255, 255, 255, 0.85)', padding: '40px', borderRadius: '15px',
-    boxShadow: '0 15px 50px rgba(0, 0, 0, 0.4)', width: '100%', maxWidth: '400px',
-    zIndex: 3, position: 'relative', backdropFilter: 'blur(15px)',
+    background: 'rgba(255, 255, 255, 0.85)',
+    padding: '40px',
+    borderRadius: '15px',
+    boxShadow: '0 15px 50px rgba(0, 0, 0, 0.4)',
+    width: '100%',
+    maxWidth: '400px',
+    position: 'relative',
+    backdropFilter: 'blur(15px)',
   },
   header: { textAlign: 'center', marginBottom: '30px' },
   h1: { fontSize: '2rem', margin: '0', color: '#ec4899' },
@@ -64,6 +56,9 @@ const ResetPassword = () => {
   const [error, setError] = useState('');
   const [hovered, setHovered] = useState(false);
 
+  // ✅ 1. Thêm hook message để sửa lỗi warning
+  const [messageApi, contextHolder] = message.useMessage();
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -83,8 +78,15 @@ const ResetPassword = () => {
         token,
         newPassword: formData.password
       });
-      message.success('Đổi mật khẩu thành công! Vui lòng đăng nhập.');
-      navigate('/login');
+      
+      // ✅ 2. Dùng messageApi thay cho message thường
+      messageApi.success('Đổi mật khẩu thành công! Vui lòng đăng nhập.');
+      
+      // Chờ 1.5s để người dùng đọc thông báo rồi mới chuyển trang
+      setTimeout(() => {
+          navigate('/login');
+      }, 1500);
+
     } catch (err) {
       setError(err.response?.data?.message || 'Link đã hết hạn hoặc lỗi hệ thống');
     } finally {
@@ -93,13 +95,14 @@ const ResetPassword = () => {
   };
 
   return (
-    <div style={styles.container}>
-      <video style={styles.videoBackground} autoPlay muted loop src="https://www.pexels.com/download/video/9034457/" />
-      <div style={styles.overlay} />
-      
+    <>
+      {/* ✅ 3. Đặt contextHolder ở đây để hiển thị thông báo */}
+      {contextHolder}
+
+      {/* Chỉ còn lại cái Card */}
       <div style={styles.card}>
         <div style={styles.header}>
-          <h1 style={styles.h1}>ĐẶT LẠI MẬT KHẨU </h1>
+          <h1 style={styles.h1}>ĐẶT LẠI MẬT KHẨU</h1>
         </div>
 
         {error && <div style={styles.errorMessage}>{error}</div>}
@@ -156,7 +159,7 @@ const ResetPassword = () => {
           </button>
         </form>
       </div>
-    </div>
+    </>
   );
 };
 
