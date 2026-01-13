@@ -5,14 +5,13 @@ import {
 } from 'antd';
 import { 
   DeleteOutlined, RollbackOutlined, CheckCircleFilled, 
-  ClockCircleOutlined, SearchOutlined, HistoryOutlined, 
+  SearchOutlined, HistoryOutlined, 
   FireFilled, CheckCircleOutlined, CalendarOutlined 
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import todoApi from '../api/todo.api';
 
 const { RangePicker } = DatePicker;
-const { Text } = Typography;
 
 const HistoryLogs = () => {
   const { token } = theme.useToken();
@@ -30,7 +29,6 @@ const HistoryLogs = () => {
     fetchData();
   }, []);
 
-  // Mỗi khi search hoặc chọn ngày thay đổi -> Lọc lại dữ liệu
   useEffect(() => {
     handleFilter();
   }, [searchText, dateRange, allData]);
@@ -63,9 +61,7 @@ const HistoryLogs = () => {
     const lowerQ = searchText.toLowerCase();
     
     const filterFn = (item) => {
-      // Lọc theo tên
       const matchName = item.title.toLowerCase().includes(lowerQ);
-      // Lọc theo ngày (Deadline hoặc UpdatedAt)
       let matchDate = true;
       if (dateRange) {
         const targetDate = item.status === 'completed' ? item.updated_at : item.deadline;
@@ -85,12 +81,44 @@ const HistoryLogs = () => {
     try { await todoApi.deleteTodo(id); message.success('Đã xóa vĩnh viễn'); fetchData(); } catch (e) {}
   };
 
-  const handleRestore = async (id) => {
-    try { await todoApi.updateTodo(id, { status: 'pending' }); message.success('Đã khôi phục công việc'); fetchData(); } catch (e) {}
+  // ✅ ĐÃ SỬA: Nhận vào record (toàn bộ object) thay vì chỉ id
+  const handleRestore = async (record) => {
+    try { 
+      // Gửi full dữ liệu để Backend không báo lỗi thiếu Title
+      const payload = {
+        ...record,
+        status: 'pending',
+        deadline: record.deadline ? dayjs(record.deadline).toISOString() : null,
+        category_id: record.category_id ? Number(record.category_id) : null,
+        priority_id: record.priority_id ? Number(record.priority_id) : null
+      };
+
+      await todoApi.updateTodo(record.id, payload); 
+      message.success('Đã khôi phục công việc về danh sách chờ'); 
+      fetchData(); 
+    } catch (e) {
+      console.error(e);
+      message.error("Không thể khôi phục");
+    }
   };
 
-  const handleQuickFinish = async (id) => {
-    try { await todoApi.updateTodo(id, { status: 'completed' }); message.success('Đã hoàn thành! ✅'); fetchData(); } catch (e) {}
+  // ✅ ĐÃ SỬA: Tương tự cho nút Xong bù
+  const handleQuickFinish = async (record) => {
+    try { 
+      const payload = {
+        ...record,
+        status: 'completed',
+        deadline: record.deadline ? dayjs(record.deadline).toISOString() : null,
+        category_id: record.category_id ? Number(record.category_id) : null,
+        priority_id: record.priority_id ? Number(record.priority_id) : null
+      };
+
+      await todoApi.updateTodo(record.id, payload); 
+      message.success('Đã hoàn thành!'); 
+      fetchData(); 
+    } catch (e) {
+        message.error("Lỗi cập nhật");
+    }
   };
 
   // --- COLUMNS ---
@@ -138,11 +166,12 @@ const HistoryLogs = () => {
       align: 'right',
       render: (_, r) => (
         <Space>
+            {/* 👇 Sửa: Truyền r (record) thay vì r.id */}
            <Button 
              type="primary" size="small" 
              style={{ background: token.colorSuccess, borderColor: token.colorSuccess }}
              icon={<CheckCircleFilled />} 
-             onClick={() => handleQuickFinish(r.id)}
+             onClick={() => handleQuickFinish(r)}
            >
              Xong bù
            </Button>
@@ -194,9 +223,10 @@ const HistoryLogs = () => {
       align: 'right',
       render: (_, r) => (
         <Space>
-          <Button type="text" icon={<RollbackOutlined />} onClick={() => handleRestore(r.id)}>Khôi phục</Button>
+           {/* 👇 Sửa: Truyền r (record) thay vì r.id */}
+          <Button type="text" icon={<RollbackOutlined />} onClick={() => handleRestore(r)}>Khôi phục</Button>
           <Popconfirm title="Xóa vĩnh viễn?" onConfirm={() => handleDelete(r.id)}>
-             <Button type="text" danger icon={<DeleteOutlined />} />
+              <Button type="text" danger icon={<DeleteOutlined />} />
           </Popconfirm>
         </Space>
       ) 
@@ -224,7 +254,6 @@ const HistoryLogs = () => {
         style={{ 
           marginBottom: 20, 
           background: 'linear-gradient(135deg, #722ed1 0%, #a661ff 100%)', 
-          
           color: 'white', 
           boxShadow: token.boxShadow 
         }}

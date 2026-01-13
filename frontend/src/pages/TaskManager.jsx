@@ -15,13 +15,14 @@ import todoApi from '../api/todo.api';
 
 const { Option } = Select;
 const { TextArea } = Input;
-const { Text } = Typography;
 
-// --- Cấu hình màu sắc & Style ---
+// --- Cấu hình màu sắc & Âm thanh ---
 const THEME_COLOR = '#722ed1'; 
+// Link file nhạc "Ting" (Success Chime)
+const successSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3');
 
 const TaskManager = () => {
-  // 1. Lấy Token màu sắc
+  // 1. Lấy Token màu sắc từ Ant Design
   const { token } = theme.useToken();
 
   // --- STATE ---
@@ -85,25 +86,80 @@ const TaskManager = () => {
 
   // --- HANDLERS ---
   const handleFilterChange = (key, value) => setFilters(prev => ({ ...prev, [key]: value, page: 1 }));
-  const handleTableChange = (newPagination) => setFilters(prev => ({ ...prev, page: newPagination.current, limit: newPagination.pageSize }));
+  
+  const handleTableChange = (newPagination) => {
+    setFilters(prev => ({ ...prev, page: newPagination.current, limit: newPagination.pageSize }));
+  };
   
   const handleDelete = async (id) => {
-    try { await todoApi.deleteTodo(id); message.success("Đã xóa nha! 🗑️"); fetchTodos(); } catch (e) {}
+    try { 
+      await todoApi.deleteTodo(id); 
+      message.success("Đã xóa nha! 🗑️"); 
+      fetchTodos(); 
+    } catch (e) {
+      message.error("Xóa thất bại");
+    }
   };
 
+  // ✅ ĐÃ SỬA LOGIC: pending -> in_progress -> completed
   const handleStatusNext = async (record) => {
-    let newStatus = record.status === 'pending' ? 'in_progress' : 'completed';
-    try { await todoApi.updateTodo(record.id, { status: newStatus }); message.success("Cập nhật trạng thái thành công! 🚀"); fetchTodos(); } catch (e) {}
+    // 1. Chuẩn hóa status hiện tại (tránh null hoặc viết hoa)
+    const currentStatus = record.status ? record.status.toLowerCase() : 'pending';
+    let newStatus = '';
+
+    // 2. Logic chuyển đổi trạng thái tuần tự
+    if (currentStatus === 'pending') {
+        newStatus = 'in_progress';
+    } else if (currentStatus === 'in_progress') {
+        newStatus = 'completed';
+    } else {
+        // Nếu data bị lỗi hoặc đang ở trạng thái lạ, mặc định quay về pending hoặc in_progress
+        // Ở đây mình để return để tránh lỗi không mong muốn
+        return; 
+    }
+    
+    try {
+      // 3. Tạo payload đầy đủ để gửi Backend
+      const payload = { 
+        ...record, 
+        status: newStatus,
+        deadline: record.deadline ? dayjs(record.deadline).toISOString() : null,
+        category_id: record.category_id ? Number(record.category_id) : null,
+        priority_id: record.priority_id ? Number(record.priority_id) : null
+      };
+
+      await todoApi.updateTodo(record.id, payload); 
+      
+      // 4. Xử lý âm thanh & thông báo
+      if (newStatus === 'completed') {
+         successSound.currentTime = 0; 
+         successSound.play().catch(e => console.error("Lỗi âm thanh:", e));
+         message.success("Xuất sắc! Đã hoàn thành công việc 🎉");
+      } else {
+         message.info("Đã chuyển sang trạng thái: Đang làm 🚀");
+      }
+      
+      // 5. Load lại bảng
+      fetchTodos(); 
+
+    } catch (e) {
+      console.error("Lỗi update status:", e);
+      message.error("Không thể cập nhật trạng thái");
+    }
   };
 
   const openModal = (record = null) => {
     setIsModalOpen(true);
     if (record) {
       setEditingId(record.id);
+      // Ép kiểu Number cho ID để Select hiển thị đúng tên
+      const catId = record.category_id ? Number(record.category_id) : undefined;
+      const priId = record.priority_id ? Number(record.priority_id) : undefined;
+
       form.setFieldsValue({
         ...record,
-        category_id: record.category_id || undefined,
-        priority_id: record.priority_id || undefined,
+        category_id: catId,
+        priority_id: priId,
         deadline: record.deadline ? dayjs(record.deadline) : null, 
       });
     } else {
@@ -125,7 +181,9 @@ const TaskManager = () => {
       }
       setIsModalOpen(false);
       fetchTodos();
-    } catch (error) { message.error("Có lỗi xảy ra 😵"); }
+    } catch (error) { 
+      message.error("Có lỗi xảy ra 😵"); 
+    }
   };
 
   // --- CẤU HÌNH CỘT TABLE ---
@@ -135,7 +193,6 @@ const TaskManager = () => {
       dataIndex: 'title',
       render: (text, record) => (
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {/* Avatar: Màu nền động theo theme */}
           <Avatar 
             shape="square" 
             style={{ 
@@ -149,7 +206,6 @@ const TaskManager = () => {
           <div>
             <div style={{ 
               fontWeight: 700, fontSize: 15, 
-              // Màu chữ động
               color: token.colorText,
               textDecoration: record.status === 'completed' ? 'line-through' : 'none',
               opacity: record.status === 'completed' ? 0.6 : 1
@@ -178,36 +234,14 @@ const TaskManager = () => {
       width: 150,
       render: (pid, r) => {
         const name = r.priority_name || priorities.find(p=>p.id===pid)?.name || 'Bình thường';
-        
-        // --- SỬA ĐOẠN NÀY ---
-        // 1. Dùng tên màu chuẩn (preset) thay vì mã Hex cứng
         let color = 'green'; 
         let icon = <CoffeeOutlined />;
         
-        if(pid >= 3) { 
-          color = 'red'; // Thay vì #ff4d4f -> dùng 'red' (Antd tự chỉnh độ dịu)
-          icon = <FireFilled />; 
-        } 
-        else if(pid === 2) { 
-          color = 'gold'; // Thay vì #faad14 -> dùng 'gold'
-          icon = <ThunderboltFilled />; 
-        } 
+        if(pid >= 3) { color = 'red'; icon = <FireFilled />; } 
+        else if(pid === 2) { color = 'gold'; icon = <ThunderboltFilled />; } 
         
         return (
-          <Tag 
-            color={color} 
-            // 2. QUAN TRỌNG: Đổi 'filled' thành 'bordered={false}'
-            // Nó giúp nền Tag trở nên mờ ảo, không bị chói trong nền đen
-            bordered={false} 
-            style={{ 
-              borderRadius: 15, 
-              padding: '4px 10px', 
-              display: 'inline-flex', 
-              alignItems: 'center', 
-              gap: 5,
-              fontWeight: 600 // Thêm độ đậm chữ cho rõ
-            }}
-          >
+          <Tag color={color} bordered={false} style={{ borderRadius: 15, padding: '4px 10px', display: 'inline-flex', alignItems: 'center', gap: 5, fontWeight: 600 }}>
             {icon} <span>{name}</span>
           </Tag>
         );
@@ -217,12 +251,8 @@ const TaskManager = () => {
       title: 'Hạn chót', 
       dataIndex: 'deadline',
       render: (d) => d ? (
-        <span style={{ 
-          // Nếu quá hạn thì màu đỏ (token.colorError), còn không thì màu text phụ
-          color: dayjs(d).isBefore(dayjs()) ? token.colorError : token.colorTextSecondary, 
-          fontWeight: 500 
-        }}>
-           {dayjs(d).format('DD/MM HH:mm')}
+        <span style={{ color: dayjs(d).isBefore(dayjs()) ? token.colorError : token.colorTextSecondary, fontWeight: 500 }}>
+          {dayjs(d).format('DD/MM HH:mm')}
         </span>
       ) : <span style={{color: token.colorTextQuaternary}}>—</span>
     },
@@ -237,15 +267,8 @@ const TaskManager = () => {
           completed: { color: 'green', text: 'Xong', icon: <CheckCircleOutlined /> },
         };
         const cur = config[status] || config.pending;
-
         return (
-          <Tag 
-            icon={cur.icon} color={cur.color} variant="filled"
-            style={{ 
-              padding: '4px 10px', borderRadius: 20, fontSize: 13, fontWeight: 500,
-              display: 'inline-flex', alignItems: 'center', gap: 4
-            }}
-          >
+          <Tag icon={cur.icon} color={cur.color} variant="filled" style={{ padding: '4px 10px', borderRadius: 20, fontSize: 13, fontWeight: 500 }}>
             {cur.text}
           </Tag>
         );
@@ -257,11 +280,16 @@ const TaskManager = () => {
       render: (_, record) => (
         <Space>
           {record.status !== 'completed' && (
-             <Tooltip title="Chuyển trạng thái kế tiếp">
+             <Tooltip title={record.status === 'pending' ? "Bắt đầu làm" : "Hoàn thành"}>
                <Button 
-                 type="primary" shape="circle" icon={<CheckCircleFilled />} 
+                 type="primary" shape="circle" 
+                 icon={record.status === 'pending' ? <SyncOutlined /> : <CheckCircleFilled />} 
                  onClick={() => handleStatusNext(record)}
-                 style={{ backgroundColor: token.colorSuccess, borderColor: token.colorSuccess }}
+                 style={{ 
+                    // Đổi màu nút: Xanh dương (Bắt đầu) -> Xanh lá (Hoàn thành)
+                    backgroundColor: record.status === 'pending' ? token.colorPrimary : token.colorSuccess, 
+                    borderColor: record.status === 'pending' ? token.colorPrimary : token.colorSuccess 
+                 }}
                />
              </Tooltip>
           )}
@@ -278,7 +306,6 @@ const TaskManager = () => {
   const progressPercent = todos.length > 0 ? Math.round((completedCount / todos.length) * 100) : 0;
 
   return (
-    // Xóa ConfigProvider và Div Wrapper cũ
     <> 
       {/* HEADER CARD */}
       <Card variant="borderless" style={{ marginBottom: 20, background: 'linear-gradient(135deg, #722ed1 0%, #a661ff 100%)', color: 'white', boxShadow: token.boxShadow }}>
@@ -350,7 +377,6 @@ const TaskManager = () => {
           pagination={pagination}
           onChange={handleTableChange}
           locale={{ emptyText: <Empty description="Chưa có công việc nào, nghỉ ngơi thôi! 🍃" /> }}
-          // Kích hoạt scroll ngang cho mobile
           scroll={{ x: 800 }} 
         />
       </Card>
@@ -381,14 +407,14 @@ const TaskManager = () => {
             <Col span={8}>
               <Form.Item name="category_id" label="Danh mục">
                 <Select placeholder="-- Chọn --" allowClear>
-                  {categories.map(c => <Option key={c.id} value={c.id}>{c.name}</Option>)}
+                  {categories.map(c => <Option key={c.id} value={Number(c.id)}>{c.name}</Option>)}
                 </Select>
               </Form.Item>
             </Col>
             <Col span={8}>
               <Form.Item name="priority_id" label="Độ ưu tiên">
                 <Select placeholder="-- Chọn --" allowClear>
-                  {priorities.map(p => <Option key={p.id} value={p.id}>{p.name}</Option>)}
+                  {priorities.map(p => <Option key={p.id} value={Number(p.id)}>{p.name}</Option>)}
                 </Select>
               </Form.Item>
             </Col>
