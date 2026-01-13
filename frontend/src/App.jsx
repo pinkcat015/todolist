@@ -15,6 +15,7 @@ import Settings from './pages/Settings';
 import HistoryLogs from './pages/HistoryLogs';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import TodoCalendar from './pages/TodoCalendar';
 // Protected Route Component (Giữ nguyên)
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem('token');
@@ -68,7 +69,7 @@ const AppContent = () => {
             <Route path="logs" element={<TodoLogs />} />
             <Route path="settings" element={<Settings />} />
             <Route path="history" element={<HistoryLogs />} />
-            
+            <Route path="calendar" element={<TodoCalendar />} />
           </Route>
   
           {/* Redirect unknown routes to login */}

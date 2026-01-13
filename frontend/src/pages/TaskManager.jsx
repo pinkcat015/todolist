@@ -222,7 +222,7 @@ const TaskManager = () => {
           color: dayjs(d).isBefore(dayjs()) ? token.colorError : token.colorTextSecondary, 
           fontWeight: 500 
         }}>
-          📅 {dayjs(d).format('DD/MM HH:mm')}
+           {dayjs(d).format('DD/MM HH:mm')}
         </span>
       ) : <span style={{color: token.colorTextQuaternary}}>—</span>
     },
