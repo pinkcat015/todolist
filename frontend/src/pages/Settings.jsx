@@ -17,13 +17,17 @@ const THEME_COLOR = '#722ed1';
 const API_URL = 'http://localhost:3000'; 
 
 const Settings = () => {
-  // 1. Lấy Token màu sắc
+  // 1. Lấy Token màu sắc và Theme Context
   const { token } = theme.useToken();
   const { isDarkMode, toggleTheme } = useTheme();
 
+  // --- STATE ---
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(false);
   
+  // State quản lý âm thanh (Mặc định là true)
+  const [soundEnabled, setSoundEnabled] = useState(true);
+
   const [user, setUser] = useState({ 
     full_name: '', email: '', avatar_url: '', phone: '', telegram_chat_id: '', default_remind_minutes: 30
   });
@@ -34,7 +38,18 @@ const Settings = () => {
   const [formProfile] = Form.useForm();
   const [formPassword] = Form.useForm();
 
-  // --- LOGIC GIỮ NGUYÊN ---
+  // --- USE EFFECTS ---
+
+  // 1. Load cài đặt Âm thanh từ LocalStorage khi vào trang
+  useEffect(() => {
+    const savedSoundSetting = localStorage.getItem('settings_sound_enabled');
+    // Nếu chưa lưu gì thì mặc định là true, ngược lại so sánh chuỗi
+    if (savedSoundSetting !== null) {
+        setSoundEnabled(savedSoundSetting === 'true');
+    }
+  }, []);
+
+  // 2. Load thông tin User từ API
   useEffect(() => {
     const fetchUser = async () => {
       setDataLoading(true);
@@ -54,6 +69,15 @@ const Settings = () => {
     };
     fetchUser();
   }, [formProfile]);
+
+  // --- HANDLERS ---
+
+  // Xử lý Bật/Tắt âm thanh
+  const handleSoundToggle = (checked) => {
+    setSoundEnabled(checked);
+    localStorage.setItem('settings_sound_enabled', checked);
+    message.success(checked ? 'Đã bật âm thanh hoàn thành 🔊' : 'Đã tắt âm thanh 🔇');
+  };
 
   const handleUploadChange = ({ fileList: newFileList }) => {
     setFileList(newFileList);
@@ -114,19 +138,14 @@ const Settings = () => {
     }
   };
 
-
   const handleUpdateRemindTime = async (minutes) => {
     try {
-      // 1. Cập nhật giao diện ngay lập tức cho mượt
       setUser(prev => ({ ...prev, default_remind_minutes: minutes }));
-
-      // 2. Gọi API lưu xuống Database
-      // Lưu ý: Phải gửi kèm cả tên và sđt cũ để không bị mất dữ liệu
       const formData = new FormData();
       formData.append('full_name', user.full_name || '');
       formData.append('phone', user.phone || '');
       formData.append('telegram_chat_id', user.telegram_chat_id || '');
-      formData.append('default_remind_minutes', minutes); // Giá trị mới
+      formData.append('default_remind_minutes', minutes);
 
       await userApi.updateProfile(formData);
       message.success('Đã lưu thời gian nhắc!');
@@ -135,7 +154,8 @@ const Settings = () => {
       message.error('Lỗi khi lưu cài đặt');
     }
   };
-  // --- UI COMPONENTS (Đã chỉnh màu) ---
+
+  // --- SUB COMPONENTS ---
 
   const GeneralSettings = () => (
     <Form form={formProfile} layout="vertical" onFinish={onFinishProfile}>
@@ -148,8 +168,7 @@ const Settings = () => {
                 src={getAvatarSrc()}
                 icon={<UserOutlined />} 
                 style={{ 
-                  backgroundColor: token.colorFill, // Màu nền avatar động
-                  // Border màu trùng với màu nền Card để tạo hiệu ứng cắt
+                  backgroundColor: token.colorFill, 
                   border: `4px solid ${token.colorBgContainer}`, 
                   boxShadow: token.boxShadow
                 }} 
@@ -192,7 +211,7 @@ const Settings = () => {
                   size="large" prefix={<MailOutlined />} disabled 
                   style={{ 
                     borderRadius: 10, cursor: 'not-allowed', 
-                    backgroundColor: token.colorFillQuaternary, // Màu nền input disabled
+                    backgroundColor: token.colorFillQuaternary, 
                     color: token.colorTextDisabled 
                   }} 
                 />
@@ -215,7 +234,7 @@ const Settings = () => {
                   <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     Telegram Chat ID 
                     <a 
-                      href="https://t.me/pinkcat015_bot" // Thay link bot của bạn vào đây
+                      href="https://t.me/pinkcat015_bot" 
                       target="_blank" 
                       rel="noreferrer" 
                       style={{ fontSize: 12, fontWeight: 400, color: THEME_COLOR }}
@@ -282,13 +301,19 @@ const Settings = () => {
         <Switch defaultChecked style={{ background: THEME_COLOR }} />
       </div>
 
-      {/* 2. Cài đặt Âm thanh */}
+      {/* 2. Cài đặt Âm thanh (Đã Liên Kết) */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 25 }}>
         <div>
            <Text strong style={{ fontSize: 16, color: token.colorText }}>Âm thanh hoàn thành</Text>
            <div style={{ color: token.colorTextSecondary, marginTop: 4 }}>Phát âm thanh "Ting" khi bạn tích hoàn thành một việc.</div>
         </div>
-        <Switch defaultChecked style={{ background: '#52c41a' }} />
+        <Switch 
+            checked={soundEnabled} 
+            onChange={handleSoundToggle}
+            checkedChildren="Bật"
+            unCheckedChildren="Tắt"
+            style={{ background: soundEnabled ? '#52c41a' : undefined }} 
+        />
       </div>
 
       {/* 3. Cài đặt Dark Mode */}
@@ -305,7 +330,6 @@ const Settings = () => {
         />
       </div>
 
-      {/* --- PHẦN MỚI THÊM: Dòng kẻ ngăn cách --- */}
       <Divider style={{ margin: '25px 0' }} />
 
       {/* 4. Cài đặt Thời gian nhắc Telegram */}
@@ -317,10 +341,9 @@ const Settings = () => {
            </div>
         </div>
         
-        {/* Ô chọn Select */}
         <Select 
-          value={user.default_remind_minutes || 30} // Lấy giá trị từ User
-          onChange={handleUpdateRemindTime}          // Gọi hàm lưu khi thay đổi
+          value={user.default_remind_minutes || 30} 
+          onChange={handleUpdateRemindTime} 
           style={{ width: 140 }}
           options={[
             { value: 10, label: 'Trước 10 phút' },
@@ -341,7 +364,6 @@ const Settings = () => {
   ];
 
   return (
-    // Xóa ConfigProvider để nhận Theme Global
     <>
       {/* HEADER CARD */}
       <Card variant="borderless" style={{ marginBottom: 20, background: 'linear-gradient(135deg, #722ed1 0%, #a661ff 100%)', color: 'white', boxShadow: token.boxShadow }}>

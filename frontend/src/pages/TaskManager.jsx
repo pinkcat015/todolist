@@ -101,25 +101,23 @@ const TaskManager = () => {
     }
   };
 
-  // ✅ ĐÃ SỬA LOGIC: pending -> in_progress -> completed
+  // ✅ ĐÃ SỬA: Logic chuyển trạng thái + Check âm thanh từ Settings
   const handleStatusNext = async (record) => {
-    // 1. Chuẩn hóa status hiện tại (tránh null hoặc viết hoa)
+    // 1. Chuẩn hóa status hiện tại
     const currentStatus = record.status ? record.status.toLowerCase() : 'pending';
     let newStatus = '';
 
-    // 2. Logic chuyển đổi trạng thái tuần tự
+    // 2. Logic tuần tự: Pending -> In Progress -> Completed
     if (currentStatus === 'pending') {
         newStatus = 'in_progress';
     } else if (currentStatus === 'in_progress') {
         newStatus = 'completed';
     } else {
-        // Nếu data bị lỗi hoặc đang ở trạng thái lạ, mặc định quay về pending hoặc in_progress
-        // Ở đây mình để return để tránh lỗi không mong muốn
-        return; 
+        return; // Nếu đang ở trạng thái lạ hoặc đã completed thì thôi
     }
     
     try {
-      // 3. Tạo payload đầy đủ để gửi Backend
+      // 3. Payload đầy đủ (Title + Description + IDs + Formatted Deadline)
       const payload = { 
         ...record, 
         status: newStatus,
@@ -130,13 +128,19 @@ const TaskManager = () => {
 
       await todoApi.updateTodo(record.id, payload); 
       
-      // 4. Xử lý âm thanh & thông báo
+      // 4. Xử lý sau khi thành công
       if (newStatus === 'completed') {
-         successSound.currentTime = 0; 
-         successSound.play().catch(e => console.error("Lỗi âm thanh:", e));
+         // 👇 KIỂM TRA CÀI ĐẶT: Chỉ phát nhạc nếu trong Settings đang BẬT
+         const isSoundOn = localStorage.getItem('settings_sound_enabled') !== 'false';
+         
+         if (isSoundOn) {
+             successSound.currentTime = 0; 
+             successSound.play().catch(e => console.error("Lỗi âm thanh:", e));
+         }
+
          message.success("Xuất sắc! Đã hoàn thành công việc 🎉");
       } else {
-         message.info("Đã chuyển sang trạng thái: Đang làm 🚀");
+         message.info("Đã chuyển sang trạng thái: Đang làm ");
       }
       
       // 5. Load lại bảng
@@ -152,7 +156,7 @@ const TaskManager = () => {
     setIsModalOpen(true);
     if (record) {
       setEditingId(record.id);
-      // Ép kiểu Number cho ID để Select hiển thị đúng tên
+      // Ép kiểu Number để Select hiển thị đúng tên Option
       const catId = record.category_id ? Number(record.category_id) : undefined;
       const priId = record.priority_id ? Number(record.priority_id) : undefined;
 
