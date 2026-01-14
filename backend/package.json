@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon src/app.js",
+    "start": "node src/app.js",
     "seed": "node src/seed.js",
     "seed:users": "node src/seedUsers.js"
   },

@@ -8,9 +8,10 @@ const User = require("./models/user.model");
 const app = express();
 
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: true,
   credentials: true
 }));
+
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -46,12 +47,10 @@ app.use("/users", userRoutes);
 
 
 const initNotificationService = require('./services/notification.service');
-app.listen(3000, () => {
-    console.log("Server running...");
-    initNotificationService(); // <--- Kích hoạt Cron Job
-});
-
 const PORT = process.env.PORT || 3000;
+
 app.listen(PORT, () => {
   console.log(`Server đang chạy tại port ${PORT}`);
+  initNotificationService(); // Cron job chạy ở production
 });
+
