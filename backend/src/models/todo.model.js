@@ -1,5 +1,21 @@
 const db = require("../config/db");
-
+const formatDateForMySQL = (dateInput) => {
+  if (!dateInput) return null;
+  
+  try {
+    const date = new Date(dateInput);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  } catch (e) {
+    return null;
+  }
+};
 
 /**
  * GET todo by id (kiểm tra user_id để security)
@@ -12,26 +28,23 @@ exports.getById = (id, userId, callback) => {
  * CREATE todo
  */
 exports.create = (todo, callback) => {
+  if (todo.deadline) {
+    todo.deadline = formatDateForMySQL(todo.deadline); // ✅ Gọn hơn!
+  }
+  
   db.query("INSERT INTO todos SET ?", todo, callback);
 };
 
 /**
  * UPDATE todo
- */
-/**
- * UPDATE todo
  * Đã sửa: Xử lý dữ liệu đầu vào & Check quyền sở hữu (userId)
  */
 exports.update = (id, userId, data, callback) => {
-  // 1. Xử lý dữ liệu sạch (Sanitize)
-  // Nếu không có giá trị (undefined/empty) thì chuyển về null để lưu vào DB
   const priority_id = data.priority_id || null;
   const category_id = data.category_id || null;
   
-  // Xử lý ngày tháng: Nếu có chuỗi thì convert sang Date, không thì null
-  const deadline = data.deadline ? new Date(data.deadline) : null;
+  const deadline = formatDateForMySQL(data.deadline); // ✅ Gọn hơn!
   
-  // Xử lý completed: convert true/false sang 1/0
   const completed = data.completed ? 1 : 0;
 
   // 2. Viết câu SQL tường minh
@@ -54,11 +67,11 @@ exports.update = (id, userId, data, callback) => {
     data.description, 
     priority_id, 
     category_id, 
-    deadline, 
+    deadline,  // ✅ Giờ đây là string format 'YYYY-MM-DD HH:MM:SS'
     data.status, 
     completed,
-    id,     // WHERE id
-    userId  // AND user_id (Bảo mật)
+    id,
+    userId
   ];
 
   db.query(sql, values, callback);

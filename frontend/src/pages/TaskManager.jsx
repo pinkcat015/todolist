@@ -173,22 +173,29 @@ const TaskManager = () => {
   };
 
   const handleFormSubmit = async (values) => {
-    try {
-      const payload = { ...values, deadline: values.deadline ? values.deadline.toISOString() : null };
-      if (editingId) {
-        await todoApi.updateTodo(editingId, payload);
-        message.success("Đã lưu thay đổi! ✨");
-      } else {
-        await todoApi.createTodo(payload);
-        message.success("Đã tạo việc mới! 💪");
-        setFilters(prev => ({ ...prev, page: 1 }));
-      }
-      setIsModalOpen(false);
-      fetchTodos();
-    } catch (error) { 
-      message.error("Có lỗi xảy ra 😵"); 
+  try {
+    const payload = { 
+      ...values, 
+      deadline: values.deadline && dayjs.isDayjs(values.deadline) 
+        ? values.deadline.toISOString() 
+        : null 
+    };
+    
+    if (editingId) {
+      await todoApi.updateTodo(editingId, payload);
+      message.success("Đã lưu thay đổi! ✨");
+    } else {
+      await todoApi.createTodo(payload);
+      message.success("Đã tạo việc mới! 💪");
+      setFilters(prev => ({ ...prev, page: 1 }));
     }
-  };
+    setIsModalOpen(false);
+    fetchTodos();
+  } catch (error) { 
+    console.error(error); // 👈 Thêm dòng này để debug
+    message.error("Có lỗi xảy ra 😵"); 
+  }
+};
 
   // --- CẤU HÌNH CỘT TABLE ---
   const columns = [
